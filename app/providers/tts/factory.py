@@ -43,8 +43,17 @@ class MasterTTSProvider(TTSProvider):
             except Exception as e:
                 logger.warning(f"VoiceStudio không khả dụng ({e}), chuyển sang Gemini/OpenAI...")
 
-        # 1. Ưu tiên Google Gemini Studio Neural Voice (Đồng bộ tuyệt đối 1 giọng từ đầu đến cuối)
-        if gemini_key and not self.gemini_disabled:
+        # 1. Nếu người dùng chọn giọng OpenAI HD (onyx, nova, shimmer, alloy, echo, fable) -> Ưu tiên OpenAI TTS HD
+        if v in ["onyx", "nova", "shimmer", "alloy", "echo", "fable"] and openai_key:
+            try:
+                from app.providers.tts.openai import OpenAITTSProvider
+                openai_tts = OpenAITTSProvider(api_key=openai_key)
+                return await openai_tts.synthesize_to_file(text, output_wav_path, voice=v, speed=speed)
+            except Exception as e:
+                logger.warning(f"OpenAI TTS gặp sự cố/hết credit ({e}), chuyển sang giải pháp dự phòng...")
+
+        # 2. Nếu người dùng chọn giọng Google Gemini Studio (charon, kore, puck, aoede, fenrir)
+        if (v in ["charon", "kore", "puck", "aoede", "fenrir"] or not openai_key) and gemini_key and not self.gemini_disabled:
             if not self.gemini:
                 self.gemini = GeminiTTSProvider(api_key=gemini_key)
             try:
@@ -52,15 +61,6 @@ class MasterTTSProvider(TTSProvider):
             except Exception as e:
                 self.gemini_disabled = True
                 logger.warning(f"Gemini TTS hết hạn mức 10 req/ngày hoặc lỗi ({e}), tự động chuyển toàn bộ sang fallback đồng bộ...")
-
-        # 2. Thử OpenAI TTS HD nếu người dùng chọn và có key
-        if v in ["onyx", "nova", "shimmer", "alloy", "echo", "fable"] and openai_key:
-            try:
-                from app.providers.tts.openai import OpenAITTSProvider
-                openai_tts = OpenAITTSProvider(api_key=openai_key)
-                return await openai_tts.synthesize_to_file(text, output_wav_path, voice=v, speed=speed)
-            except Exception as e:
-                logger.warning(f"OpenAI TTS gặp lỗi ({e}), chuyển sang fallback tiếp theo...")
 
         # 3. Ánh xạ giọng Edge-TTS Neural chuẩn truyền hình
         edge_voice = "vi-VN-NamMinhNeural" if "nam" in v or v in ["onyx", "charon", "fenrir"] else "vi-VN-HoaiMyNeural"

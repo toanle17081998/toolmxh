@@ -44,6 +44,7 @@ class OpenAITTSProvider(TTSProvider):
         cmd = [
             ffmpeg_bin, "-y",
             "-i", str(temp_mp3),
+            "-af", "highpass=f=70,afade=t=in:ss=0:d=0.06,areverse,afade=t=in:ss=0:d=0.06,areverse",
             "-ar", "44100",
             "-ac", "1",
             "-c:a", "pcm_s16le",

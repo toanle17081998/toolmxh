@@ -161,12 +161,14 @@ async def list_projects():
 async def get_topic_suggestions(
     keyword: Optional[str] = None,
     category: Optional[str] = "all",
+    brain: str = "auto",
     use_ai: bool = False
 ):
     if use_ai:
         topics = await TopicExplorerService.generate_ai_suggestions(
             keyword=keyword,
-            category=category
+            category=category,
+            brain=brain
         )
     else:
         topics = TopicExplorerService.get_curated_topics(

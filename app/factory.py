@@ -96,31 +96,54 @@ class VietnameseVideoFactory:
 
         self.log(f"Khởi tạo dự án: {p_id} | Chủ đề: '{topic}' | Nền tảng: {platform}", style="bold green")
 
+        def _get_fallback_llm(failed_llm):
+            gemini_key = os.getenv("GEMINI_API_KEY") or settings.GEMINI_API_KEY
+            openai_key = os.getenv("OPENAI_API_KEY") or settings.OPENAI_API_KEY
+            is_openai = "openai" in failed_llm.__class__.__name__.lower()
+            if is_openai and gemini_key:
+                from app.providers.llm.gemini import GeminiLLMProvider
+                return GeminiLLMProvider(api_key=gemini_key)
+            elif not is_openai and openai_key:
+                from app.providers.llm.openai import OpenAILLMProvider
+                return OpenAILLMProvider(api_key=openai_key)
+            else:
+                from app.providers.llm.offline import OfflineBrainProvider
+                return OfflineBrainProvider()
+
         # 1. RESEARCH
         state_mgr.update_stage(PipelineStage.RESEARCH, 5.0)
-        self.log("Đang nghiên cứu chủ đề và sự kiện kịch tính...")
+        self.log(f"Đang nghiên cứu chủ đề bằng não bộ {self.llm.__class__.__name__}...")
         try:
             research_data = await self.llm.research_topic(topic)
         except Exception as e:
-            self.log(f"LLM gặp lỗi ({e}), tự động chuyển sang Offline Brain...", style="bold yellow")
-            from app.providers.llm.offline import OfflineBrainProvider
-            self.llm = OfflineBrainProvider()
+            self.log(f"LLM gặp sự cố ({e}), tự động chuyển sang mô hình dự phòng...", style="bold yellow")
+            self.llm = _get_fallback_llm(self.llm)
             research_data = await self.llm.research_topic(topic)
         with open(p_dir / "research" / "research.json", "w", encoding="utf-8") as f:
             json.dump(research_data, f, ensure_ascii=False, indent=2)
 
         # 2. SCRIPT
         state_mgr.update_stage(PipelineStage.SCRIPT, 15.0)
-        self.log("Đang xây dựng kịch bản tiếng Việt cấu trúc chuẩn viral...")
-        script = await self.llm.generate_script(topic, duration, platform, language)
+        self.log(f"Đang xây dựng kịch bản tiếng Việt bằng {self.llm.__class__.__name__}...")
+        try:
+            script = await self.llm.generate_script(topic, duration, platform, language)
+        except Exception as e:
+            self.log(f"LLM gặp sự cố ({e}), tự động chuyển sang mô hình dự phòng...", style="bold yellow")
+            self.llm = _get_fallback_llm(self.llm)
+            script = await self.llm.generate_script(topic, duration, platform, language)
         with open(p_dir / "script" / "script.json", "w", encoding="utf-8") as f:
             f.write(script.model_dump_json(indent=2))
         self.log(f"Kịch bản đã hoàn thành: '{script.title}' ({len(script.scenes)} scenes)", style="green")
 
         # 3. STORYBOARD
         state_mgr.update_stage(PipelineStage.STORYBOARD, 25.0)
-        self.log("Đang chuyển đổi thành Storyboard điện ảnh chi tiết...")
-        storyboard = await self.llm.generate_storyboard(script)
+        self.log(f"Đang chuyển đổi thành Storyboard bằng {self.llm.__class__.__name__}...")
+        try:
+            storyboard = await self.llm.generate_storyboard(script)
+        except Exception as e:
+            self.log(f"LLM gặp sự cố ({e}), tự động chuyển sang mô hình dự phòng...", style="bold yellow")
+            self.llm = _get_fallback_llm(self.llm)
+            storyboard = await self.llm.generate_storyboard(script)
         with open(p_dir / "storyboard" / "storyboard.json", "w", encoding="utf-8") as f:
             f.write(storyboard.model_dump_json(indent=2))
 

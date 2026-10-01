@@ -218,13 +218,13 @@ class TopicExplorerService:
     async def generate_ai_suggestions(
         keyword: Optional[str] = None,
         category: Optional[str] = "all",
-        gemini_key: Optional[str] = None
+        gemini_key: Optional[str] = None,
+        openai_key: Optional[str] = None,
+        brain: str = "auto"
     ) -> List[Dict[str, Any]]:
-        """Sử dụng Gemini AI để brainstorm những chủ đề video ngắn giật gân, cuốn hút người xem."""
-        key = gemini_key or os.getenv("GEMINI_API_KEY") or settings.GEMINI_API_KEY
-        if not key:
-            # Fallback nếu chưa có API key
-            return TopicExplorerService.get_curated_topics(keyword, category)
+        """Sử dụng OpenAI GPT hoặc Google Gemini để brainstorm những chủ đề video triệu view."""
+        g_key = gemini_key or os.getenv("GEMINI_API_KEY") or settings.GEMINI_API_KEY
+        o_key = openai_key or os.getenv("OPENAI_API_KEY") or settings.OPENAI_API_KEY
 
         category_labels = {
             "space": "Khoa học, Vũ trụ, Thiên văn bí ẩn",
@@ -238,59 +238,83 @@ class TopicExplorerService:
         kw_prompt = f"liên quan đến từ khóa '{keyword}'" if keyword and keyword.strip() else "những chủ đề giật gân, tò mò nhất"
 
         prompt = f"""Bạn là chuyên gia sáng tạo nội dung video ngắn triệu view (TikTok, YouTube Shorts, Facebook Reels).
-Nhiệm vụ của bạn: Đề xuất 6 chủ đề video {kw_prompt} thuộc lĩnh vực: {chosen_cat}.
-Mỗi chủ đề phải cực kỳ cuốn hút, kích thích tò mò cao (High Hook Rate, High Retention), phù hợp với thị hiếu người xem Việt Nam.
+Nhiệm vụ: Đề xuất 6 chủ đề video {kw_prompt} thuộc lĩnh vực: {chosen_cat}.
+Mỗi chủ đề phải cực kỳ cuốn hút, kích thích tò mò cao (High Hook Rate, High Retention), phù hợp với người xem Việt Nam.
 
 Trả về DUY NHẤT một mảng JSON với cấu trúc sau:
 [
   {{
     "title": "Tiêu đề video giật gân, súc tích (dưới 15 từ)",
     "hook": "Câu mở đầu 3 giây đầu tiên gây sốc hoặc tò mò",
-    "badge": "🔥 Đề Xuất AI",
+    "badge": "👑 GPT Hot Trend",
     "category": "{category if category != 'all' else 'space'}",
     "category_name": "{chosen_cat}",
     "image_model": "real_media",
     "style": "Cinematic Documentary",
-    "voice": "charon"
+    "voice": "onyx"
   }}
 ]
 """
-        try:
-            client = genai.Client(api_key=key)
-            models = ["gemini-3.8-flash", "gemini-3.5-flash-lite", "gemini-2.5-flash"]
-            last_err = None
-            response_text = ""
-            for m in models:
-                try:
-                    res = client.models.generate_content(
-                        model=m,
-                        contents=prompt,
-                        config=types.GenerateContentConfig(
-                            temperature=0.7,
-                            response_mime_type="application/json"
+
+        # 1. Thử OpenAI GPT nếu có key và được ưu tiên
+        if o_key and brain in ["auto", "openai", "gpt"]:
+            try:
+                from openai import OpenAI
+                o_client = OpenAI(api_key=o_key)
+                for model_name in ["gpt-4o-mini", "gpt-4o"]:
+                    try:
+                        res = o_client.chat.completions.create(
+                            model=model_name,
+                            messages=[{"role": "user", "content": prompt}],
+                            response_format={"type": "json_object"}
                         )
-                    )
-                    if res and res.text:
-                        response_text = res.text
-                        break
-                except Exception as ex:
-                    last_err = ex
-                    continue
-            
-            if not response_text:
-                raise last_err or Exception("Không nhận được phản hồi từ AI")
+                        raw = res.choices[0].message.content
+                        parsed = json.loads(raw)
+                        items = parsed.get("topics", parsed) if isinstance(parsed, dict) else parsed
+                        if isinstance(items, dict):
+                            for k, v in items.items():
+                                if isinstance(v, list):
+                                    items = v
+                                    break
+                        if isinstance(items, list) and len(items) > 0:
+                            for idx, item in enumerate(items):
+                                item["id"] = f"gpt_{idx}_{hash(item.get('title', '')) % 10000}"
+                                item["badge"] = item.get("badge") or "👑 GPT Hot Trend"
+                            return items
+                    except Exception as model_err:
+                        logger.warning(f"OpenAI model {model_name} không khả dụng ({model_err}), thử model tiếp theo...")
+            except Exception as e:
+                logger.warning(f"OpenAI GPT không thể gợi ý chủ đề ({e}), chuyển sang Gemini Brain...")
 
-            data = json.loads(response_text)
-            if isinstance(data, dict) and "topics" in data:
-                data = data["topics"]
-            if isinstance(data, list) and len(data) > 0:
-                for idx, item in enumerate(data):
-                    item["id"] = f"ai_{idx}_{hash(item.get('title', '')) % 10000}"
-                    if "badge" not in item:
-                        item["badge"] = "✨ AI Hot Trend"
-                return data
-        except Exception as e:
-            logger.warning(f"Lỗi khi gọi AI gợi ý chủ đề: {e}, chuyển sang danh mục tuyển chọn.")
+        # 2. Thử Google Gemini Brain
+        if g_key:
+            try:
+                client = genai.Client(api_key=g_key)
+                models = ["gemini-3.8-flash", "gemini-3.5-flash-lite", "gemini-2.5-flash"]
+                for m in models:
+                    try:
+                        res = client.models.generate_content(
+                            model=m,
+                            contents=prompt,
+                            config=types.GenerateContentConfig(
+                                temperature=0.7,
+                                response_mime_type="application/json"
+                            )
+                        )
+                        if res and res.text:
+                            data = json.loads(res.text)
+                            if isinstance(data, dict) and "topics" in data:
+                                data = data["topics"]
+                            if isinstance(data, list) and len(data) > 0:
+                                for idx, item in enumerate(data):
+                                    item["id"] = f"gemini_{idx}_{hash(item.get('title', '')) % 10000}"
+                                    item["badge"] = item.get("badge") or "⚡ Gemini Brain"
+                                return data
+                    except Exception:
+                        continue
+            except Exception as e:
+                logger.warning(f"Gemini Brain không khả dụng ({e}), chuyển sang danh mục tuyển chọn...")
 
-        # Fallback an toàn về dữ liệu tuyển chọn
+        # 3. Fallback an toàn về dữ liệu tuyển chọn
+        return TopicExplorerService.get_curated_topics(keyword, category)
         return TopicExplorerService.get_curated_topics(keyword, category)

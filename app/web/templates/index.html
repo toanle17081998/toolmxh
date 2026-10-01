@@ -124,16 +124,18 @@
               <span>🧠 1. Kịch bản & Nghiên cứu (LLM Brain)</span>
             </label>
             <select id="llmModelSelect" class="w-full bg-slate-950 border border-slate-700/80 rounded-lg px-2.5 py-1.5 text-xs text-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500">
-              <optgroup label="⚡ Google Gemini">
-                <option value="gemini-3.8-flash" selected>Gemini 3.8 Flash (Mới - Khuyên dùng)</option>
-                <option value="gemini-3.5-flash-lite">Gemini 3.5 Flash-Lite (Siêu tốc)</option>
-                <option value="gemini-3.1-pro-preview">Gemini 3.1 Pro (Chuyên sâu cao cấp)</option>
-                <option value="gemini-2.5-flash">Gemini 2.5 Flash (Cực kỳ ổn định)</option>
+              <optgroup label="👑 OpenAI GPT (Đỉnh Cao Tư Duy & Sáng Tạo)">
+                <option value="gpt-4o" selected>GPT-4o (Đa phương tiện cao cấp nhất)</option>
+                <option value="gpt-4o-mini">GPT-4o Mini (Siêu tốc độ & Tiết kiệm)</option>
+                <option value="o3-mini">OpenAI o3-mini (Lập luận logic sâu)</option>
+                <option value="o1-mini">OpenAI o1-mini (Suy luận chuyên sâu)</option>
+                <option value="gpt-5.5">GPT-5.5 Sol (Mô hình thử nghiệm mới)</option>
               </optgroup>
-              <optgroup label="👑 OpenAI GPT">
-                <option value="gpt-5.6">GPT-5.6 Sol (Mới nhất)</option>
-                <option value="gpt-5.5">GPT-5.5 (Thông minh cao cấp)</option>
-                <option value="gpt-4o">GPT-4o (Đa phương tiện)</option>
+              <optgroup label="⚡ Google Gemini">
+                <option value="gemini-3.8-flash">Gemini 3.8 Flash (Khuyên dùng)</option>
+                <option value="gemini-3.5-flash-lite">Gemini 3.5 Flash-Lite (Siêu tốc)</option>
+                <option value="gemini-3.1-pro-preview">Gemini 3.1 Pro (Chuyên sâu)</option>
+                <option value="gemini-2.5-flash">Gemini 2.5 Flash</option>
               </optgroup>
               <optgroup label="💻 Không Cần API">
                 <option value="offline">Offline Brain (Nội bộ máy tính)</option>
@@ -173,17 +175,19 @@
               <span>🎙️ 4. Giọng đọc thuyết minh (Vietnamese TTS)</span>
             </label>
             <select id="voiceSelect" class="w-full bg-slate-950 border border-slate-700/80 rounded-lg px-2.5 py-1.5 text-xs text-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500">
-              <optgroup label="🌟 Google Gemini Studio (Truyền Cảm, Siêu Hay - Khuyên Dùng)">
-                <option value="charon" selected>🎙️ Charon - Nam Trầm Điện Ảnh (Khám Phá, Kỳ Bí, Lôi Cuốn)</option>
+              <optgroup label="👑 OpenAI Studio Voice HD (Cực Hay, Chuẩn Quốc Tế)">
+                <option value="onyx" selected>🎙️ Onyx - Nam Trầm Điện Ảnh (Ấm áp, Cuốn hút)</option>
+                <option value="nova">🎙️ Nova - Nữ Truyền Cảm (Trẻ trung, Năng động)</option>
+                <option value="shimmer">🎙️ Shimmer - Nữ Dịu Dàng (Sâu lắng, Tri thức)</option>
+                <option value="alloy">🎙️ Alloy - Giọng Hiện Đại (Cân bằng, Rõ nét)</option>
+                <option value="echo">🎙️ Echo - Nam Đĩnh Đạc (Chuyên nghiệp)</option>
+              </optgroup>
+              <optgroup label="🌟 Google Gemini Studio (Truyền Cảm, Điện Ảnh)">
+                <option value="charon">🎙️ Charon - Nam Trầm Điện Ảnh (Khám Phá, Kỳ Bí)</option>
                 <option value="kore">🎙️ Kore - Nữ Phát Thanh Viên (Dịu Dàng, Truyền Cảm)</option>
                 <option value="puck">🎙️ Puck - Nam Trẻ Trung (TikTok / Shorts Năng Động)</option>
                 <option value="aoede">🎙️ Aoede - Nữ Sâu Lắng (Tri Thức, Đĩnh Đạc)</option>
                 <option value="fenrir">🎙️ Fenrir - Nam Uy Lực (Hào Hùng, Mạnh Mẽ)</option>
-              </optgroup>
-              <optgroup label="👑 OpenAI HD (Cần Credit OpenAI)">
-                <option value="onyx">🎙️ Nam Trầm (Onyx HD)</option>
-                <option value="nova">🎙️ Nữ Năng Động (Nova HD)</option>
-                <option value="shimmer">🎙️ Nữ Cảm Xúc (Shimmer HD)</option>
               </optgroup>
               <optgroup label="📺 Đài Truyền Hình VTV">
                 <option value="namminh">🎙️ Nam Thời Sự (NamMinh Neural)</option>
@@ -348,9 +352,14 @@
             class="w-full bg-slate-900/90 border border-slate-700/80 rounded-xl pl-9 pr-3 py-2 text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition">
         </div>
         <div class="flex gap-2">
-          <button onclick="searchTopics()" type="button" class="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold text-xs transition border border-slate-700 flex items-center space-x-1.5">
+          <button onclick="searchTopics()" type="button" class="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold text-xs transition border border-slate-700 flex items-center space-x-1">
             <span>Tìm Kiếm</span>
           </button>
+          <select id="topicBrainSelect" class="bg-slate-800 border border-slate-700 rounded-xl px-2 py-2 text-xs text-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+            <option value="openai" selected>👑 OpenAI GPT</option>
+            <option value="gemini">⚡ Google Gemini</option>
+            <option value="auto">🔄 Tự Động</option>
+          </select>
           <button id="aiSuggestBtn" onclick="generateAiTopics()" type="button" class="px-3.5 py-2 rounded-xl bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 hover:opacity-95 text-white font-bold text-xs transition shadow-lg shadow-indigo-600/30 flex items-center space-x-1.5 whitespace-nowrap">
             <span id="aiBtnIcon">✨</span>
             <span id="aiBtnText">AI Tạo Ý Tưởng Mới</span>
@@ -469,16 +478,18 @@
 
     async function generateAiTopics() {
       const kw = document.getElementById('topicSearchKeyword').value.trim();
+      const brainEl = document.getElementById('topicBrainSelect');
+      const brain = brainEl ? brainEl.value : 'auto';
       const btn = document.getElementById('aiSuggestBtn');
       const icon = document.getElementById('aiBtnIcon');
       const text = document.getElementById('aiBtnText');
 
       btn.disabled = true;
       icon.innerHTML = '<span class="inline-block animate-spin">⏳</span>';
-      text.innerText = 'AI Đang Brainstorm...';
+      text.innerText = `${brain === 'openai' ? 'OpenAI GPT' : 'AI'} Đang Brainstorm...`;
 
       try {
-        await loadTopics(currentTopicCategory, kw, true);
+        await loadTopics(currentTopicCategory, kw, true, brain);
       } finally {
         btn.disabled = false;
         icon.innerText = '✨';
@@ -486,12 +497,12 @@
       }
     }
 
-    async function loadTopics(category = 'all', keyword = '', useAi = false) {
+    async function loadTopics(category = 'all', keyword = '', useAi = false, brain = 'auto') {
       const grid = document.getElementById('topicsGrid');
       grid.innerHTML = `
         <div class="py-12 text-center text-slate-500 flex flex-col items-center justify-center space-y-2">
           <div class="w-6 h-6 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
-          <span class="text-xs">${useAi ? 'AI đang phân tích xu hướng và sáng tạo hook triệu view...' : 'Đang tải danh sách chủ đề thịnh hành...'}</span>
+          <span class="text-xs">${useAi ? (brain === 'openai' ? 'OpenAI GPT' : 'AI Brain') + ' đang phân tích xu hướng và sáng tạo hook triệu view...' : 'Đang tải danh sách chủ đề thịnh hành...'}</span>
         </div>
       `;
 
@@ -499,6 +510,7 @@
         const queryParams = new URLSearchParams({
           category: category,
           keyword: keyword,
+          brain: brain,
           use_ai: useAi ? 'true' : 'false'
         });
         const res = await fetch(`/api/topics/suggest?${queryParams.toString()}`);
