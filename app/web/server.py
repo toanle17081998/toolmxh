@@ -35,14 +35,15 @@ class GenerateRequest(BaseModel):
     platform: str = "tiktok"
     style: str = "Cinematic Documentary"
     llm_model: str = "gemini-3.8-flash"
-    image_model: str = "gemini-3-pro-image-preview"
+    image_model: str = "opencut_realistic"
     video_model: str = "cinematic"
-    voice: str = "onyx"
+    voice: str = "charon"
     gemini_key: Optional[str] = None
     openai_key: Optional[str] = None
 
 class SettingsUpdateRequest(BaseModel):
     gemini_api_key: Optional[str] = None
+    fal_api_key: Optional[str] = None
     openai_api_key: Optional[str] = None
     comfyui_server_url: Optional[str] = None
 
@@ -175,6 +176,10 @@ async def update_system_settings(req: SettingsUpdateRequest):
         keys_map["GEMINI_API_KEY"] = req.gemini_api_key
         os.environ["GEMINI_API_KEY"] = req.gemini_api_key
         settings.GEMINI_API_KEY = req.gemini_api_key
+    if req.fal_api_key:
+        keys_map["FAL_KEY"] = req.fal_api_key
+        os.environ["FAL_KEY"] = req.fal_api_key
+        settings.FAL_KEY = req.fal_api_key
     if req.openai_api_key:
         keys_map["OPENAI_API_KEY"] = req.openai_api_key
         os.environ["OPENAI_API_KEY"] = req.openai_api_key

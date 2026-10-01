@@ -2,11 +2,11 @@ from typing import List, Optional
 from pydantic import BaseModel, Field
 
 class CharacterBible(BaseModel):
-    character_id: str
-    name: str
+    character_id: str = Field(default="character_01")
+    name: str = Field(default="Protagonist")
     gender: str = "male"
     age: int = 35
-    appearance: str
+    appearance: str = Field(default="realistic detailed character")
     hair: str = "short black hair"
     clothing: str = "futuristic explorer jacket"
     reference_image: Optional[str] = None

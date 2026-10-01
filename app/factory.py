@@ -37,7 +37,7 @@ class VietnameseVideoFactory:
     def __init__(
         self,
         console_output: bool = True,
-        voice: str = "onyx",
+        voice: str = "charon",
         gemini_key: Optional[str] = None,
         openai_key: Optional[str] = None,
         llm_model: Optional[str] = None,
@@ -45,9 +45,9 @@ class VietnameseVideoFactory:
         video_model: str = "cinematic"
     ):
         self.console_output = console_output
-        self.voice = voice
+        self.voice = voice or "charon"
         self.llm_model = llm_model or "gemini-3.8-flash"
-        self.image_model = image_model or "gemini-3-pro-image-preview"
+        self.image_model = image_model or "opencut_realistic"
         self.video_model = video_model or "cinematic"
 
         # Thiết lập key nếu được truyền vào
