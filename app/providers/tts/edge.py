@@ -26,28 +26,42 @@ class EdgeTTSProvider(TTSProvider):
 
         rate_str = f"+{int((speed - 1.0) * 100)}%" if speed >= 1.0 else f"-{int((1.0 - speed) * 100)}%"
         
-        # Thử synthesize qua proxy nội bộ trước, nếu lỗi thì thử trực tiếp
+        # Thử nghiệm với các proxy và cơ chế retry kiên cường
         saved = False
         last_error = None
-        for p in [self.proxy, None]:
-            try:
-                communicate = edge_tts.Communicate(text=text, voice=voice, rate=rate_str, proxy=p)
-                await asyncio.wait_for(communicate.save(str(temp_mp3)), timeout=25.0)
-                if temp_mp3.exists() and temp_mp3.stat().st_size > 500:
-                    saved = True
-                    break
-            except Exception as e:
-                last_error = e
-                continue
+        proxies_to_try = [self.proxy]
+        if None not in proxies_to_try:
+            proxies_to_try.append(None)
+
+        for attempt in range(4):
+            for p in proxies_to_try:
+                if temp_mp3.exists():
+                    try:
+                        temp_mp3.unlink()
+                    except Exception:
+                        pass
+                try:
+                    communicate = edge_tts.Communicate(text=text, voice=voice, rate=rate_str, proxy=p)
+                    await asyncio.wait_for(communicate.save(str(temp_mp3)), timeout=20.0)
+                    if temp_mp3.exists() and temp_mp3.stat().st_size > 500:
+                        saved = True
+                        break
+                except Exception as e:
+                    last_error = e
+                    continue
+            if saved:
+                break
+            await asyncio.sleep(1.0 * (attempt + 1))
 
         if not saved or not temp_mp3.exists() or temp_mp3.stat().st_size == 0:
-            raise RuntimeError(f"Edge-TTS failed to synthesize: {last_error}")
+            raise RuntimeError(f"Edge-TTS failed to synthesize after 4 attempts: {last_error}")
 
-        # Convert sang WAV 44.1kHz PCM
+        # Convert sang WAV 44.1kHz PCM kèm bộ lọc Master Studio (Khử tạp âm, lọc dải tần giọng nói, nén động dynamic compressor và chuẩn hóa âm lượng -16 LUFS)
         ffmpeg_bin = get_ffmpeg_binary()
         cmd = [
             ffmpeg_bin, "-y",
             "-i", str(temp_mp3),
+            "-af", "highpass=f=60,lowpass=f=12000,acompressor=threshold=-18dB:ratio=3:attack=5:release=50,loudnorm=I=-16:TP=-1.5:LRA=9",
             "-ar", "44100",
             "-ac", "1",
             "-c:a", "pcm_s16le",
@@ -61,7 +75,10 @@ class EdgeTTSProvider(TTSProvider):
         await proc.wait()
 
         if temp_mp3.exists():
-            temp_mp3.unlink()
+            try:
+                temp_mp3.unlink()
+            except Exception:
+                pass
 
         import wave
         with wave.open(str(out_path), "rb") as wf:
@@ -70,3 +87,4 @@ class EdgeTTSProvider(TTSProvider):
             duration = frames / float(rate)
 
         return duration
+

@@ -53,7 +53,14 @@ class MasterTTSProvider(TTSProvider):
         openai_key = os.getenv("OPENAI_API_KEY") or settings.OPENAI_API_KEY
         gemini_key = os.getenv("GEMINI_API_KEY") or settings.GEMINI_API_KEY
 
-        # 1. Nếu chọn OpenAI HD và có key hợp lệ
+        # 1. Nếu người dùng chủ động chọn Google Translate (gTTS)
+        if v in ["google", "gtts"]:
+            dur = await self.google.synthesize_to_file(text, output_wav_path, "vi", speed)
+            self._locked_provider = self.google
+            self._locked_voice = "vi"
+            return dur
+
+        # 2. Nếu chọn OpenAI HD và có key hợp lệ
         if v in ["onyx", "nova", "shimmer", "alloy", "echo", "fable"] and openai_key:
             try:
                 from app.providers.tts.openai import OpenAITTSProvider
@@ -63,10 +70,25 @@ class MasterTTSProvider(TTSProvider):
                 self._locked_voice = v
                 return dur
             except Exception as e:
-                logger.warning(f"OpenAI TTS không khả dụng ({e}), chuyển sang giải pháp khác...")
+                logger.warning(f"OpenAI TTS không khả dụng ({e}), chuyển sang Microsoft Studio Neural...")
 
-        # 2. Nếu chọn Gemini Studio (charon, kore, puck, aoede, fenrir)
-        if any(k in v for k in ["charon", "kore", "puck", "aoede", "fenrir"]) and gemini_key and not self.gemini_disabled:
+        # 3. Microsoft Edge-TTS Neural Studio (NamMinh - MC Thời sự VTV / Hoài My - Nữ truyền cảm)
+        # Đây là engine tốt nhất: Hoàn toàn miễn phí, không giới hạn quota, âm thanh chuẩn phòng thu
+        edge_voice = "vi-VN-NamMinhNeural" if any(k in v for k in ["nam", "charon", "fenrir", "puck", "onyx", "echo", "minh"]) else "vi-VN-HoaiMyNeural"
+        
+        # Thử với Edge-TTS (đã tích hợp 4 lần retry tự động)
+        for master_retry in range(3):
+            try:
+                dur = await self.edge.synthesize_to_file(text, output_wav_path, edge_voice, speed)
+                self._locked_provider = self.edge
+                self._locked_voice = edge_voice
+                return dur
+            except Exception as e:
+                logger.warning(f"Thử lại tổng hợp Edge-TTS ({master_retry+1}/3): {e}")
+                await asyncio.sleep(2.0)
+
+        # Nếu thực sự tất cả các lần thử Edge-TTS đều lỗi mạng nghiêm trọng, thử Gemini TTS 1 lần
+        if gemini_key and not self.gemini_disabled:
             if not self.gemini:
                 self.gemini = GeminiTTSProvider(api_key=gemini_key)
             try:
@@ -75,23 +97,12 @@ class MasterTTSProvider(TTSProvider):
                 self._locked_voice = v
                 return dur
             except Exception as e:
-                self.gemini_disabled = True
-                logger.warning(f"Gemini TTS không phản hồi ({e}), chuyển sang Studio Neural...")
+                logger.warning(f"Gemini fallback thất bại: {e}")
 
-        # 3. Microsoft Edge-TTS Neural (NamMinh / HoaiMy)
-        edge_voice = "vi-VN-NamMinhNeural" if any(k in v for k in ["nam", "charon", "fenrir", "puck", "onyx", "echo"]) else "vi-VN-HoaiMyNeural"
-        try:
-            dur = await self.edge.synthesize_to_file(text, output_wav_path, edge_voice, speed)
-            self._locked_provider = self.edge
-            self._locked_voice = edge_voice
-            return dur
-        except Exception as e:
-            logger.warning(f"Edge-TTS gặp sự cố mạng ({e}), chuyển sang Google Studio fallback...")
-
-        # 4. Fallback cuối cùng: Google TTS (Khóa chặt cho toàn bộ video để không bị đổi giọng)
-        dur = await self.google.synthesize_to_file(text, output_wav_path, "vi", speed)
-        self._locked_provider = self.google
-        self._locked_voice = "vi"
+        # Trường hợp khẩn cấp nhất: thử lại Edge-TTS lần cuối để bảo toàn chất lượng
+        dur = await self.edge.synthesize_to_file(text, output_wav_path, edge_voice, speed)
+        self._locked_provider = self.edge
+        self._locked_voice = edge_voice
         return dur
 
 def get_tts_provider(voice: str = "onyx") -> TTSProvider:
