@@ -39,6 +39,7 @@ class TimelineEngine:
                 output_wav_path=str(scene_audio_path),
                 voice=voice
             )
+            await asyncio.sleep(0.3)
 
             # Tính toán phân bổ từ cho Karaoke Subtitle
             words = scene.narration.split()

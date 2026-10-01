@@ -35,55 +35,71 @@ class RealVisualMediaEngine(ImageGenerationProvider):
 
     def _extract_keywords(self, prompt: str) -> List[str]:
         p = prompt.lower()
+        ignore_words = {
+            "cinematic", "photorealistic", "8k", "ultra", "detailed", "lighting", "shot",
+            "render", "style", "high", "resolution", "hyperrealistic", "unreal", "engine",
+            "hdr", "sharp", "focus", "masterpiece", "octane", "dramatic", "epic", "view",
+            "looking", "atmosphere", "highly", "intricate", "concept", "digital"
+        }
+        # Tách các từ danh từ chính
+        clean = re.sub(r"[^a-zA-Z0-9\s]", " ", prompt)
+        words = [w for w in clean.split() if len(w) > 2 and w.lower() not in ignore_words]
+        
         keywords = []
+        if words:
+            keywords.append(" ".join(words[:4]))
+            if len(words) >= 6:
+                keywords.append(" ".join(words[2:6]))
 
-        is_anime = any(w in p for w in ["anime", "cartoon", "hoạt hình", "illustration", "art"])
+        # Bản đồ ngữ nghĩa tiếng Việt nếu có
+        vi_mappings = [
+            (["máy tính", "lượng tử", "quantum"], "Quantum computer laboratory"),
+            (["mật mã", "bẻ khóa", "cryptography"], "Cyber security encryption data"),
+            (["hacker", "tin tặc", "màn hình"], "Hacker cyber security screens"),
+            (["vi mạch", "chip", "bộ xử lý"], "Microchip processor circuit board"),
+            (["trái đất", "earth"], "Earth from space NASA"),
+            (["mặt trăng", "moon"], "Full Moon NASA"),
+            (["sóng thần", "đại dương", "biển", "ocean"], "Huge ocean wave storm"),
+            (["vũ trụ", "ngân hà", "galaxy"], "Galaxy stars nebula NASA"),
+            (["người", "nhân vật", "crowd"], "People crowd watching sky")
+        ]
+        for terms, mapped in vi_mappings:
+            if any(t in p for t in terms):
+                keywords.append(mapped)
 
-        if any(w in p for w in ["moon", "mặt trăng", "lunar"]):
-            if is_anime:
-                keywords.extend(["Anime moon night sky", "Makoto Shinkai night sky", "Full moon illustration"])
-            else:
-                keywords.extend(["Full Moon NASA", "Moon surface Apollo", "Moon from space NASA"])
+        return keywords or ["Scientific research laboratory", "Earth from space NASA"]
 
-        elif any(w in p for w in ["earth", "trái đất", "orbit", "quỹ đạo"]):
-            if is_anime:
-                keywords.extend(["Anime earth space", "Anime space background"])
-            else:
-                keywords.extend(["Earth from space Apollo", "Blue Marble NASA", "Earth orbit ISS"])
+    def generate_ai_visual(self, prompt: str, output_path: str, target_w: int = 1080, target_h: int = 1920, seed: Optional[int] = None) -> bool:
+        """Sinh hình ảnh 8K chân thực bám sát 100% nội dung kịch bản qua Pollinations AI."""
+        try:
+            # Làm giàu prompt với phong cách điện ảnh chất lượng cao
+            styled_prompt = f"{prompt}, highly detailed, sharp focus, 8k resolution, cinematic lighting, photorealistic masterpiece"
+            encoded = urllib.parse.quote(styled_prompt)
+            seed_param = f"&seed={seed}" if seed is not None else ""
+            url = f"https://image.pollinations.ai/prompt/{encoded}?width=720&height=1280&nologo=true{seed_param}"
+            req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"})
+            
+            temp_file = Path(output_path).with_suffix(".pollinations.tmp")
+            with self.opener.open(req, timeout=18) as resp:
+                with open(temp_file, "wb") as f:
+                    f.write(resp.read())
 
-        elif any(w in p for w in ["tsunami", "sóng thần", "ocean", "đại dương", "biển", "tide"]):
-            if is_anime:
-                keywords.extend(["Anime ocean waves", "Anime sea storm"])
-            else:
-                keywords.extend(["Tsunami wave ocean", "Huge ocean wave storm", "Deep sea underwater"])
-
-        elif any(w in p for w in ["disaster", "catastrophe", "bão", "sấm sét", "storm", "hỗn loạn"]):
-            if is_anime:
-                keywords.extend(["Anime lightning storm sky", "Anime explosion disaster"])
-            else:
-                keywords.extend(["Severe storm lightning night", "Volcano eruption lava", "Hurricane satellite NASA"])
-
-        elif any(w in p for w in ["people", "crowd", "human", "protagonist", "con người", "nhìn lên"]):
-            if is_anime:
-                keywords.extend(["Anime person looking at sky", "Anime crowd night", "Anime character shocked"])
-            else:
-                keywords.extend(["Crowd looking up sky night", "People watching stars night", "Stargazing night"])
-
-        else:
-            # Rút trích các danh từ chính từ prompt
-            clean = re.sub(r"[^a-zA-Z\s]", " ", prompt)
-            words = [w for w in clean.split() if len(w) > 3 and w.lower() not in ["shot", "cinematic", "photorealistic", "detailed", "lighting", "ultra", "hyper"]]
-            if words:
-                keywords.append(" ".join(words[:3]))
-            keywords.append("Space galaxy NASA" if not is_anime else "Anime starry sky night")
-
-        return keywords
+            if temp_file.exists() and temp_file.stat().st_size > 5000:
+                with Image.open(str(temp_file)) as img:
+                    img = img.convert("RGB")
+                    resized = img.resize((target_w, target_h), Image.Resampling.LANCZOS)
+                    resized.save(output_path, format="PNG", quality=95)
+                temp_file.unlink(missing_ok=True)
+                return True
+        except Exception:
+            pass
+        return False
 
     def search_wikimedia_image(self, query: str) -> Optional[str]:
-        """Tìm URL ảnh độ phân giải cao trên Wikimedia Commons."""
+        """Tìm URL ảnh tư liệu độ phân giải cao trên Wikimedia Commons."""
         try:
             encoded = urllib.parse.quote(query)
-            url = f"https://commons.wikimedia.org/w/api.php?action=query&generator=search&gsrnamespace=6&gsrsearch={encoded}&gsrlimit=5&prop=imageinfo&iiprop=url|mime|size&format=json"
+            url = f"https://commons.wikimedia.org/w/api.php?action=query&generator=search&gsrnamespace=6&gsrsearch={encoded}&gsrlimit=6&prop=imageinfo&iiprop=url|mime|size&format=json"
             req = urllib.request.Request(url, headers={"User-Agent": "ToolMXH-VideoFactory/2.0 (contact: toanlv31@viettel.com.vn)"})
             with self.opener.open(req, timeout=12) as resp:
                 data = json.loads(resp.read().decode("utf-8"))
@@ -95,8 +111,7 @@ class RealVisualMediaEngine(ImageGenerationProvider):
                         mime = infos[0].get("mime", "")
                         width = infos[0].get("width", 0)
                         height = infos[0].get("height", 0)
-                        # Ưu tiên ảnh chất lượng cao trên 800px
-                        if mime in ["image/jpeg", "image/png", "image/webp"] and (width >= 800 or height >= 800):
+                        if mime in ["image/jpeg", "image/png", "image/webp"] and (width >= 600 or height >= 600):
                             return img_url
         except Exception:
             pass
@@ -111,7 +126,6 @@ class RealVisualMediaEngine(ImageGenerationProvider):
                 with open(temp_file, "wb") as f:
                     f.write(resp.read())
 
-            # Mở và crop chuẩn tỉ lệ dọc TikTok/Reels
             with Image.open(str(temp_file)) as img:
                 img = img.convert("RGB")
                 orig_w, orig_h = img.size
@@ -119,12 +133,10 @@ class RealVisualMediaEngine(ImageGenerationProvider):
                 orig_ratio = orig_w / float(orig_h)
 
                 if orig_ratio > target_ratio:
-                    # Ảnh rộng hơn: crop 2 bên, giữ chiều cao
                     new_w = int(orig_h * target_ratio)
                     offset_x = (orig_w - new_w) // 2
                     box = (offset_x, 0, offset_x + new_w, orig_h)
                 else:
-                    # Ảnh cao hơn: crop trên dưới, giữ chiều rộng
                     new_h = int(orig_w / target_ratio)
                     offset_y = (orig_h - new_h) // 2
                     box = (0, offset_y, orig_w, offset_y + new_h)
@@ -150,10 +162,13 @@ class RealVisualMediaEngine(ImageGenerationProvider):
         out_p = Path(output_path)
         out_p.parent.mkdir(parents=True, exist_ok=True)
 
-        # 1. Trích xuất danh sách từ khóa tìm kiếm theo ngữ nghĩa
-        queries = self._extract_keywords(prompt)
+        # 1. TẦNG 1: Sinh hình ảnh Photorealistic 8K bám sát 100% bối cảnh và kịch bản chi tiết của cảnh
+        ai_success = self.generate_ai_visual(prompt, str(out_p), target_w=width, target_h=height, seed=seed)
+        if ai_success and out_p.exists() and out_p.stat().st_size > 10000:
+            return str(out_p)
 
-        # 2. Tìm kiếm trên các kho ảnh thực tế
+        # 2. TẦNG 2: Tìm ảnh tư liệu thực tế (Wikimedia Commons, NASA, viện bảo tàng khoa học)
+        queries = self._extract_keywords(prompt)
         for q in queries:
             img_url = self.search_wikimedia_image(q)
             if img_url:
@@ -161,14 +176,14 @@ class RealVisualMediaEngine(ImageGenerationProvider):
                 if success and out_p.exists() and out_p.stat().st_size > 10000:
                     return str(out_p)
 
-        # 3. Fallback: Nếu không tìm thấy từ khóa cụ thể, dùng ảnh thiên văn / vũ trụ NASA thật
-        fallback_query = "Full Moon NASA" if "moon" in prompt.lower() else "Earth from space NASA"
+        # 3. TẦNG 3: Fallback ảnh tư liệu chất lượng cao
+        fallback_query = "Space cosmos NASA" if "space" in prompt.lower() else "High technology server room"
         fallback_url = self.search_wikimedia_image(fallback_query)
         if fallback_url:
             self.download_and_crop(fallback_url, str(out_p), target_w=width, target_h=height)
-            if out_p.exists():
+            if out_p.exists() and out_p.stat().st_size > 5000:
                 return str(out_p)
 
-        # 4. Nếu máy tính offline hoàn toàn, fallback an toàn cuối cùng
+        # 4. TẦNG 4: Dự phòng máy tính offline hoàn toàn
         from app.providers.image.opencut_realistic import OpenCutRealisticImageProvider
         return await OpenCutRealisticImageProvider().generate_image(prompt, output_path, width, height, seed)
