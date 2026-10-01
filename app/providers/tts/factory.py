@@ -20,6 +20,7 @@ class MasterTTSProvider(TTSProvider):
         self.edge = EdgeTTSProvider()
         self.google = GoogleTTSProvider()
         self.voice_preference = voice_preference
+        self.gemini_disabled = False
 
     async def synthesize_to_file(
         self,
@@ -43,25 +44,32 @@ class MasterTTSProvider(TTSProvider):
                 logger.warning(f"VoiceStudio không khả dụng ({e}), chuyển sang Gemini/OpenAI...")
 
         # 1. Ưu tiên Google Gemini Studio Neural Voice (Đồng bộ tuyệt đối 1 giọng từ đầu đến cuối)
-        if gemini_key:
+        if gemini_key and not self.gemini_disabled:
             if not self.gemini:
                 self.gemini = GeminiTTSProvider(api_key=gemini_key)
-            return await self.gemini.synthesize_to_file(text, output_wav_path, voice=v, speed=speed)
+            try:
+                return await self.gemini.synthesize_to_file(text, output_wav_path, voice=v, speed=speed)
+            except Exception as e:
+                self.gemini_disabled = True
+                logger.warning(f"Gemini TTS hết hạn mức 10 req/ngày hoặc lỗi ({e}), tự động chuyển toàn bộ sang fallback đồng bộ...")
 
         # 2. Thử OpenAI TTS HD nếu người dùng chọn và có key
         if v in ["onyx", "nova", "shimmer", "alloy", "echo", "fable"] and openai_key:
-            from app.providers.tts.openai import OpenAITTSProvider
-            openai_tts = OpenAITTSProvider(api_key=openai_key)
-            return await openai_tts.synthesize_to_file(text, output_wav_path, voice=v, speed=speed)
+            try:
+                from app.providers.tts.openai import OpenAITTSProvider
+                openai_tts = OpenAITTSProvider(api_key=openai_key)
+                return await openai_tts.synthesize_to_file(text, output_wav_path, voice=v, speed=speed)
+            except Exception as e:
+                logger.warning(f"OpenAI TTS gặp lỗi ({e}), chuyển sang fallback tiếp theo...")
 
         # 3. Ánh xạ giọng Edge-TTS Neural chuẩn truyền hình
-        edge_voice = "vi-VN-NamMinhNeural" if "nam" in v or v == "onyx" else "vi-VN-HoaiMyNeural"
+        edge_voice = "vi-VN-NamMinhNeural" if "nam" in v or v in ["onyx", "charon", "fenrir"] else "vi-VN-HoaiMyNeural"
         try:
             return await self.edge.synthesize_to_file(text, output_wav_path, edge_voice, speed)
         except Exception as e:
             logger.warning(f"Edge-TTS gặp sự cố mạng ({e}), chuyển sang fallback cuối cùng...")
 
-        # 4. Fallback cuối cùng
+        # 4. Fallback cuối cùng: Google TTS (gTTS ổn định cao, không giới hạn quota, chạy qua proxy)
         return await self.google.synthesize_to_file(text, output_wav_path, "vi", speed)
 
 def get_tts_provider(voice: str = "onyx") -> TTSProvider:

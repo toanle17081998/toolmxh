@@ -71,7 +71,17 @@ async def run_factory_task(project_id: str, req: GenerateRequest):
         )
         active_projects[project_id] = {"status": "COMPLETED", "result": res}
     except Exception as e:
-        active_projects[project_id] = {"status": "FAILED", "error": str(e)}
+        error_msg = str(e)
+        active_projects[project_id] = {"status": "FAILED", "error": error_msg}
+        try:
+            state_mgr = ProjectStateManager(project_id)
+            if state_mgr.state_file.exists():
+                state = state_mgr.load_state()
+                state.stage = PipelineStage.FAILED
+                state.errors.append(error_msg)
+                state_mgr.save_state(state)
+        except Exception:
+            pass
 
 @app.get("/", response_class=HTMLResponse)
 async def serve_dashboard():
