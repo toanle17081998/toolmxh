@@ -21,9 +21,9 @@ class AudioEngine:
         ffmpeg_bin = get_ffmpeg_binary()
 
         effective_bgm = bgm_path
-        # 1. Nếu không có BGM thực tế, giữ nguyên giọng đọc thuyết minh Studio trong trẻo (kèm fade in/out êm dịu)
+        # 1. Nếu không có BGM thực tế, giữ nguyên giọng đọc thuyết minh Studio trong trẻo tự nhiên
         if not effective_bgm or not Path(effective_bgm).exists():
-            af_filter = f"highpass=f=60,afade=t=in:ss=0:d=0.4,afade=t=out:st={max(0.0, total_duration - 1.2):.2f}:d=1.2,loudnorm=I=-16:TP=-1.5:LRA=9"
+            af_filter = f"afade=t=in:ss=0:d=0.1,afade=t=out:st={max(0.0, total_duration - 0.5):.2f}:d=0.5"
             cmd = [
                 ffmpeg_bin, "-y",
                 "-i", str(narration_wav_path),

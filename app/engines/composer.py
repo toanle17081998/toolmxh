@@ -53,6 +53,8 @@ class VideoComposer:
             "-safe", "0",
             "-i", str(concat_txt),
             "-i", str(mixed_audio_path),
+            "-map", "0:v:0",
+            "-map", "1:a:0",
             "-vf", vf_str,
             "-c:v", "libx264",
             "-preset", "medium",

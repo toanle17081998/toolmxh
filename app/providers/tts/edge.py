@@ -56,12 +56,11 @@ class EdgeTTSProvider(TTSProvider):
         if not saved or not temp_mp3.exists() or temp_mp3.stat().st_size == 0:
             raise RuntimeError(f"Edge-TTS failed to synthesize after 4 attempts: {last_error}")
 
-        # Convert sang WAV 44.1kHz PCM kèm bộ lọc Master Studio (Khử tạp âm, lọc dải tần giọng nói, nén động dynamic compressor và chuẩn hóa âm lượng -16 LUFS)
+        # Convert sang WAV 44.1kHz PCM chuẩn phòng thu nguyên bản, trong trẻo, không thêm bộ lọc gây méo/hú tiếng
         ffmpeg_bin = get_ffmpeg_binary()
         cmd = [
             ffmpeg_bin, "-y",
             "-i", str(temp_mp3),
-            "-af", "highpass=f=60,lowpass=f=12000,acompressor=threshold=-18dB:ratio=3:attack=5:release=50,loudnorm=I=-16:TP=-1.5:LRA=9",
             "-ar", "44100",
             "-ac", "1",
             "-c:a", "pcm_s16le",
