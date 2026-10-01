@@ -5,6 +5,11 @@ from typing import Optional
 from pydantic import Field
 from pydantic_settings import BaseSettings
 
+# Tự động nạp proxy công ty nếu phát hiện mạng nội bộ
+if "HTTP_PROXY" not in os.environ and "http_proxy" not in os.environ:
+    os.environ["HTTP_PROXY"] = "http://172.16.120.13:3128"
+    os.environ["HTTPS_PROXY"] = "http://172.16.120.13:3128"
+
 class Settings(BaseSettings):
     # App & Workdirs
     APP_NAME: str = "Vietnamese Generative Video Factory"

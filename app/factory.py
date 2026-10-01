@@ -47,7 +47,7 @@ class VietnameseVideoFactory:
         self.console_output = console_output
         self.voice = voice or "charon"
         self.llm_model = llm_model or "gemini-3.8-flash"
-        self.image_model = image_model or "opencut_realistic"
+        self.image_model = image_model or "real_media"
         self.video_model = video_model or "cinematic"
 
         # Thiết lập key nếu được truyền vào
