@@ -63,6 +63,15 @@ def main():
     # Command: hardware
     subparsers.add_parser("hardware", help="Kiểm tra cấu hình phần cứng")
 
+    # Command: ui / web
+    ui_parser = subparsers.add_parser("ui", help="Mở giao diện Web Dashboard trực quan")
+    ui_parser.add_argument("--port", type=int, default=7860, help="Cổng chạy web dashboard")
+    ui_parser.add_argument("--host", type=str, default="127.0.0.1", help="Địa chỉ host")
+
+    web_parser = subparsers.add_parser("web", help="Mở giao diện Web Dashboard trực quan (alias)")
+    web_parser.add_argument("--port", type=int, default=7860, help="Cổng chạy web dashboard")
+    web_parser.add_argument("--host", type=str, default="127.0.0.1", help="Địa chỉ host")
+
     args = parser.parse_args()
 
     if not args.command:
@@ -71,7 +80,18 @@ def main():
 
     print_banner()
 
-    if args.command == "hardware":
+    if args.command in ["ui", "web"]:
+        import uvicorn
+        import webbrowser
+        url = f"http://{args.host}:{args.port}"
+        console.print(f"[bold green]Khởi động Web Dashboard tại: {url}[/bold green]")
+        console.print("[dim]Nhấn Ctrl+C để dừng server.[/dim]")
+        try:
+            webbrowser.open(url)
+        except Exception:
+            pass
+        uvicorn.run("app.web.server:app", host=args.host, port=args.port, reload=False)
+    elif args.command == "hardware":
         cmd_hardware()
     elif args.command == "generate":
         # Xác định key

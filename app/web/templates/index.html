@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="vi" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vietnamese Generative Video Factory Studio</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Plus Jakarta Sans', sans-serif; }
+    .glass-panel { background: rgba(18, 24, 38, 0.75); backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 0.08); }
+    .glow-btn { box-shadow: 0 0 25px -5px rgba(99, 102, 241, 0.6); }
+    .glow-btn:hover { box-shadow: 0 0 35px 0px rgba(99, 102, 241, 0.85); }
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: #0b0f19; }
+    ::-webkit-scrollbar-thumb { background: #1f293d; border-radius: 4px; }
+  </style>
+</head>
+<body class="bg-[#080c14] text-slate-100 min-h-screen flex flex-col">
+
+  <!-- Header Navigation -->
+  <header class="border-b border-slate-800/80 bg-[#0b101b]/90 sticky top-0 z-50 px-6 py-3.5 flex items-center justify-between">
+    <div class="flex items-center space-x-3">
+      <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-600 to-violet-500 flex items-center justify-center shadow-lg shadow-indigo-500/30">
+        <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
+      </div>
+      <div>
+        <h1 class="text-lg font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-white via-slate-200 to-indigo-300">
+          Vietnamese Generative Video Factory
+        </h1>
+        <p class="text-xs text-slate-400 font-medium">100% Visual AI Generation • Audio-First Synchronization</p>
+      </div>
+    </div>
+
+    <div class="flex items-center space-x-3">
+      <button onclick="openSettingsModal()" class="px-3.5 py-1.5 rounded-lg text-xs font-semibold text-slate-300 bg-slate-800/80 hover:bg-slate-700 transition flex items-center space-x-2 border border-slate-700">
+        <svg class="w-4 h-4 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+        <span>Cài Đặt API Key Pro</span>
+      </button>
+      <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+        <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 mr-1.5 animate-pulse"></span>
+        Ready
+      </span>
+    </div>
+  </header>
+
+  <!-- Main Content Layout -->
+  <main class="flex-1 max-w-7xl w-full mx-auto p-6 grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+    <!-- Left Column: Studio Controls (5 cols) -->
+    <div class="lg:col-span-5 space-y-5">
+      <div class="glass-panel rounded-2xl p-5 space-y-4">
+        <div>
+          <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1.5">Chủ đề video (Topic)</label>
+          <textarea id="topicInput" rows="3" placeholder="Nhập chủ đề video của bạn..."
+            class="w-full bg-slate-900/90 border border-slate-700/80 rounded-xl p-3 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition resize-none">10 bí ẩn dưới đáy đại dương chưa từng được giải mã</textarea>
+          
+          <!-- Gợi ý chủ đề nhanh -->
+          <div class="flex flex-wrap gap-1.5 mt-2">
+            <button onclick="setTopic(this.innerText)" class="text-[11px] bg-slate-800 hover:bg-slate-700 text-slate-300 px-2 py-0.5 rounded-md border border-slate-700 transition">Nếu Mặt Trăng biến mất thì sao?</button>
+            <button onclick="setTopic(this.innerText)" class="text-[11px] bg-slate-800 hover:bg-slate-700 text-slate-300 px-2 py-0.5 rounded-md border border-slate-700 transition">Bí ẩn Hố Đen vũ trụ</button>
+            <button onclick="setTopic(this.innerText)" class="text-[11px] bg-slate-800 hover:bg-slate-700 text-slate-300 px-2 py-0.5 rounded-md border border-slate-700 transition">Sự thật rùng rợn về Tam giác quỷ</button>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1.5">Thời lượng</label>
+            <select id="durationSelect" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-sm text-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+              <option value="30">30 Giây</option>
+              <option value="60" selected>60 Giây (Chuẩn TikTok)</option>
+              <option value="120">2 Phút</option>
+              <option value="180">3 Phút</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1.5">Nền tảng</label>
+            <select id="platformSelect" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-sm text-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+              <option value="tiktok" selected>TikTok (9:16 Dọc)</option>
+              <option value="shorts">YouTube Shorts (9:16)</option>
+              <option value="reels">Facebook Reels (9:16)</option>
+              <option value="youtube">YouTube (16:9 Ngang)</option>
+            </select>
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1.5">Giọng đọc (Vietnamese Voiceover)</label>
+          <select id="voiceSelect" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-sm text-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+            <option value="onyx" selected>🎙️ Nam Trầm Ấm (OpenAI Onyx HD - Cực Hay Cho Tài Liệu)</option>
+            <option value="nova">🎙️ Nữ Năng Động (OpenAI Nova HD - Truyền Cảm Hứng)</option>
+            <option value="shimmer">🎙️ Nữ Sâu Lắng (OpenAI Shimmer HD - Cảm Xúc)</option>
+            <option value="namminh">🎙️ Nam VTV Thời Sự (NamMinh Neural)</option>
+            <option value="hoaimy">🎙️ Nữ Phát Thanh Viên (HoaiMy Neural)</option>
+            <option value="cosyvoice">🎙️ CosyVoice 3 (Alibaba / VoiceStudio Local)</option>
+            <option value="kokoro">🎙️ Kokoro-82M Studio (VoiceStudio Local)</option>
+          </select>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1.5">Phong cách Visual</label>
+            <select id="styleSelect" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-sm text-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+              <option value="Cinematic Documentary" selected>Cinematic Documentary</option>
+              <option value="Photorealistic 8K">Photorealistic 8K</option>
+              <option value="Dark Sci-Fi Fantasy">Dark Sci-Fi Fantasy</option>
+              <option value="Cyberpunk Neon">Cyberpunk Neon</option>
+              <option value="Historical Anime">Cinematic Anime</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1.5">Mô hình Video</label>
+            <select id="videoModelSelect" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-sm text-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+              <option value="AUTO" selected>Tự động (Flagship Auto)</option>
+              <option value="VEO">Google Veo 2 (Gemini Pro)</option>
+              <option value="COMFYUI">ComfyUI (Wan 2.1 / LTX)</option>
+            </select>
+          </div>
+        </div>
+
+        <button id="generateBtn" onclick="startGeneration()"
+          class="w-full py-3.5 px-4 bg-gradient-to-r from-indigo-600 via-indigo-500 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white font-bold text-sm rounded-xl transition duration-200 flex items-center justify-center space-x-2 glow-btn">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+          <span>SINH VIDEO HOÀN CHỈNH</span>
+        </button>
+      </div>
+
+      <!-- Quick History Panel -->
+      <div class="glass-panel rounded-2xl p-5">
+        <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3 flex items-center justify-between">
+          <span>Dự án gần đây</span>
+          <button onclick="loadProjects()" class="text-indigo-400 hover:underline">Làm mới</button>
+        </h3>
+        <div id="projectsList" class="space-y-2 max-h-48 overflow-y-auto pr-1">
+          <p class="text-xs text-slate-500 italic">Đang tải danh sách dự án...</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right Column: Live Monitor & Video Preview (7 cols) -->
+    <div class="lg:col-span-7 space-y-5">
+      
+      <!-- Live Progress Card -->
+      <div id="monitorCard" class="glass-panel rounded-2xl p-5 space-y-4">
+        <div class="flex items-center justify-between">
+          <div>
+            <h2 class="text-base font-bold text-slate-100 flex items-center space-x-2">
+              <span id="statusIndicator" class="w-2.5 h-2.5 rounded-full bg-slate-500"></span>
+              <span id="currentStatusText">Sẵn sàng tạo video</span>
+            </h2>
+            <p id="projectIdDisplay" class="text-xs text-slate-500 font-mono mt-0.5">Chưa có dự án nào đang chạy</p>
+          </div>
+          <span id="progressPercent" class="text-xl font-extrabold text-indigo-400">0%</span>
+        </div>
+
+        <!-- Progress Bar -->
+        <div class="w-full bg-slate-800/80 rounded-full h-2.5 overflow-hidden">
+          <div id="progressBar" class="bg-gradient-to-r from-indigo-500 to-violet-500 h-2.5 rounded-full transition-all duration-300" style="width: 0%"></div>
+        </div>
+
+        <!-- Live Step Indicators -->
+        <div class="grid grid-cols-4 gap-2 pt-1 text-center text-xs font-semibold">
+          <div id="stepResearch" class="py-1.5 px-1 bg-slate-900/60 rounded-lg text-slate-500 border border-slate-800">1. Research</div>
+          <div id="stepScript" class="py-1.5 px-1 bg-slate-900/60 rounded-lg text-slate-500 border border-slate-800">2. Script</div>
+          <div id="stepVoice" class="py-1.5 px-1 bg-slate-900/60 rounded-lg text-slate-500 border border-slate-800">3. Voice & Sub</div>
+          <div id="stepVisual" class="py-1.5 px-1 bg-slate-900/60 rounded-lg text-slate-500 border border-slate-800">4. Visual AI</div>
+        </div>
+
+        <!-- Scene Progress Table -->
+        <div id="scenesContainer" class="hidden mt-3 pt-3 border-t border-slate-800">
+          <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Chi tiết từng Cảnh (Scene Grid)</h4>
+          <div id="scenesGrid" class="grid grid-cols-2 sm:grid-cols-4 gap-2"></div>
+        </div>
+      </div>
+
+      <!-- Video Preview & Artifacts Card -->
+      <div id="previewCard" class="glass-panel rounded-2xl p-5 space-y-4 hidden">
+        <h3 class="text-sm font-bold uppercase tracking-wider text-slate-300 flex items-center justify-between">
+          <span>Xem Trước Video Hoàn Thiện</span>
+          <span class="text-xs font-normal text-emerald-400">1080x1920 • 30fps • Subtitle Burned</span>
+        </h3>
+
+        <div class="flex flex-col md:flex-row gap-5 items-center">
+          <!-- Video Player (Vertical 9:16) -->
+          <div class="w-full md:w-56 aspect-[9/16] bg-black rounded-xl overflow-hidden shadow-2xl border border-slate-700/80 relative flex-shrink-0">
+            <video id="videoPlayer" controls playsinline class="w-full h-full object-cover"></video>
+          </div>
+
+          <!-- Metadata & Downloads -->
+          <div class="flex-1 space-y-3.5 w-full">
+            <div>
+              <h4 id="videoTitle" class="text-base font-bold text-white mb-1">Tiêu đề video</h4>
+              <p id="videoHook" class="text-xs text-indigo-300 italic mb-2">"Hook mở đầu thu hút..."</p>
+              <div class="bg-slate-900/90 rounded-xl p-3 border border-slate-800 text-xs text-slate-300 relative group">
+                <span class="text-slate-500 block mb-1 font-bold text-[10px] uppercase">TikTok Caption:</span>
+                <p id="tiktokCaption" class="line-clamp-2">Caption...</p>
+                <button onclick="copyCaption()" class="mt-2 text-xs text-indigo-400 hover:text-indigo-300 font-semibold flex items-center space-x-1">
+                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
+                  <span>Sao chép Caption & Hashtags</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Download Buttons -->
+            <div class="grid grid-cols-2 gap-2 pt-1">
+              <a id="downloadVideoBtn" download class="py-2 px-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-xs font-bold text-center transition flex items-center justify-center space-x-1.5 shadow-md">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                <span>Tải Video MP4</span>
+              </a>
+              <a id="downloadSubBtn" download class="py-2 px-3 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-xs font-semibold text-center border border-slate-700 transition flex items-center justify-center space-x-1.5">
+                <span>Tải Subtitle (.SRT)</span>
+              </a>
+              <a id="downloadScriptBtn" download class="py-2 px-3 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-xs font-semibold text-center border border-slate-700 transition flex items-center justify-center space-x-1.5">
+                <span>Tải Kịch Bản (.TXT)</span>
+              </a>
+              <a id="downloadMetaBtn" download class="py-2 px-3 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-xs font-semibold text-center border border-slate-700 transition flex items-center justify-center space-x-1.5">
+                <span>Tải Metadata (.JSON)</span>
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- Modal Cài Đặt API Key Pro -->
+  <div id="settingsModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="glass-panel bg-[#0f1422] rounded-2xl max-w-md w-full p-6 space-y-4 border border-slate-700 shadow-2xl">
+      <div class="flex items-center justify-between pb-3 border-b border-slate-800">
+        <h3 class="text-base font-bold text-white flex items-center space-x-2">
+          <span>⚙️ Cài Đặt Khóa API Pro</span>
+        </h3>
+        <button onclick="closeSettingsModal()" class="text-slate-400 hover:text-white">&times;</button>
+      </div>
+
+      <div class="space-y-3.5 text-xs">
+        <div>
+          <label class="block font-bold text-slate-300 mb-1">Google Gemini Pro API Key (Khuyên Dùng)</label>
+          <input type="password" id="geminiKeyInput" placeholder="AIzaSy..."
+            class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-slate-100 focus:ring-2 focus:ring-indigo-500">
+          <p class="text-[11px] text-slate-500 mt-1">Dùng để kích hoạt Gemini 2.5 Pro, Imagen 3 (4K siêu thực) và Google Veo 2.</p>
+        </div>
+
+        <div>
+          <label class="block font-bold text-slate-300 mb-1">OpenAI Pro API Key</label>
+          <input type="password" id="openaiKeyInput" placeholder="sk-..."
+            class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-slate-100 focus:ring-2 focus:ring-indigo-500">
+          <p class="text-[11px] text-slate-500 mt-1">Dùng để kích hoạt GPT-4o, DALL-E 3 HD và Giọng đọc Studio Onyx/Nova HD.</p>
+        </div>
+      </div>
+
+      <div class="pt-3 border-t border-slate-800 flex justify-end space-x-2">
+        <button onclick="closeSettingsModal()" class="px-4 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold text-xs transition">Hủy</button>
+        <button onclick="saveSettings()" class="px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs transition">Lưu Cấu Hình</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let activeProjectId = null;
+    let pollInterval = null;
+
+    function setTopic(text) {
+      document.getElementById('topicInput').value = text;
+    }
+
+    async function loadProjects() {
+      const res = await fetch('/api/projects');
+      const list = await res.json();
+      const container = document.getElementById('projectsList');
+      if (list.length === 0) {
+        container.innerHTML = '<p class="text-xs text-slate-500 italic">Chưa có dự án nào.</p>';
+        return;
+      }
+      container.innerHTML = list.map(p => `
+        <div onclick="selectProject('${p.project_id}')" class="p-2.5 rounded-xl bg-slate-900/60 hover:bg-slate-800/80 border border-slate-800 cursor-pointer transition flex items-center justify-between">
+          <div class="truncate pr-2">
+            <h5 class="text-xs font-bold text-slate-200 truncate">${p.topic}</h5>
+            <span class="text-[10px] text-slate-500">${p.project_id} • ${p.created_at}</span>
+          </div>
+          <span class="text-[10px] px-2 py-0.5 rounded font-semibold ${p.stage === 'COMPLETED' ? 'bg-emerald-500/10 text-emerald-400' : 'bg-indigo-500/10 text-indigo-400'}">${p.stage}</span>
+        </div>
+      `).join('');
+    }
+
+    async function startGeneration() {
+      const topic = document.getElementById('topicInput').value.trim();
+      if (!topic) return alert('Vui lòng nhập chủ đề video!');
+
+      const btn = document.getElementById('generateBtn');
+      btn.disabled = true;
+      btn.classList.add('opacity-50');
+
+      const body = {
+        topic: topic,
+        duration: parseInt(document.getElementById('durationSelect').value),
+        platform: document.getElementById('platformSelect').value,
+        style: document.getElementById('styleSelect').value,
+        voice: document.getElementById('voiceSelect').value,
+        video_model: document.getElementById('videoModelSelect').value
+      };
+
+      try {
+        const res = await fetch('/api/generate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body)
+        });
+        const data = await res.json();
+        activeProjectId = data.project_id;
+        document.getElementById('projectIdDisplay').innerText = `ID Dự Án: ${activeProjectId}`;
+        document.getElementById('statusIndicator').className = 'w-2.5 h-2.5 rounded-full bg-amber-400 animate-pulse';
+        document.getElementById('currentStatusText').innerText = 'Đang khởi động quy trình AI...';
+        
+        if (pollInterval) clearInterval(pollInterval);
+        pollInterval = setInterval(pollProgress, 2000);
+      } catch (err) {
+        alert('Lỗi khởi động: ' + err.message);
+        btn.disabled = false;
+        btn.classList.remove('opacity-50');
+      }
+    }
+
+    async function pollProgress() {
+      if (!activeProjectId) return;
+      try {
+        const res = await fetch(`/api/progress/${activeProjectId}`);
+        const data = await res.json();
+        
+        const pct = Math.round(data.progress_percentage || 0);
+        document.getElementById('progressPercent').innerText = `${pct}%`;
+        document.getElementById('progressBar').style.width = `${pct}%`;
+
+        // Cập nhật stage
+        if (data.stage) {
+          document.getElementById('currentStatusText').innerText = `Đang xử lý: ${data.stage}`;
+          highlightStep(data.stage);
+        }
+
+        // Render scene cards
+        if (data.scenes_progress && Object.keys(data.scenes_progress).length > 0) {
+          document.getElementById('scenesContainer').classList.remove('hidden');
+          const grid = document.getElementById('scenesGrid');
+          grid.innerHTML = Object.values(data.scenes_progress).map(sc => `
+            <div class="p-2 rounded-lg bg-slate-900 border border-slate-800 text-[11px] space-y-1">
+              <div class="flex items-center justify-between font-bold">
+                <span class="text-slate-300">Cảnh ${sc.scene_id}</span>
+                <span class="${sc.status === 'VIDEO_DONE' ? 'text-emerald-400' : 'text-amber-400'}">${sc.status === 'VIDEO_DONE' ? '✓' : '...'}</span>
+              </div>
+              <p class="text-[10px] text-slate-500">${sc.duration > 0 ? sc.duration.toFixed(1) + 's' : ''}</p>
+              ${sc.status === 'VIDEO_DONE' ? `
+                <button onclick="regenerateScene(${sc.scene_id})" class="w-full mt-1 text-[10px] py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-indigo-300 border border-slate-700">Tạo lại</button>
+              ` : ''}
+            </div>
+          `).join('');
+        }
+
+        if (data.stage === 'COMPLETED') {
+          clearInterval(pollInterval);
+          document.getElementById('statusIndicator').className = 'w-2.5 h-2.5 rounded-full bg-emerald-400';
+          document.getElementById('currentStatusText').innerText = 'Hoàn thành xuất sắc!';
+          document.getElementById('generateBtn').disabled = false;
+          document.getElementById('generateBtn').classList.remove('opacity-50');
+          showPreview(activeProjectId);
+          loadProjects();
+        } else if (data.stage === 'FAILED') {
+          clearInterval(pollInterval);
+          document.getElementById('statusIndicator').className = 'w-2.5 h-2.5 rounded-full bg-red-500';
+          document.getElementById('currentStatusText').innerText = 'Quá trình gặp lỗi!';
+          document.getElementById('generateBtn').disabled = false;
+          document.getElementById('generateBtn').classList.remove('opacity-50');
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    function highlightStep(stage) {
+      const reset = id => document.getElementById(id).className = "py-1.5 px-1 bg-slate-900/60 rounded-lg text-slate-500 border border-slate-800";
+      const active = id => document.getElementById(id).className = "py-1.5 px-1 bg-indigo-600/20 text-indigo-400 border border-indigo-500 font-bold rounded-lg animate-pulse";
+      const done = id => document.getElementById(id).className = "py-1.5 px-1 bg-emerald-500/20 text-emerald-400 border border-emerald-500 font-bold rounded-lg";
+
+      if (stage === 'RESEARCH') { active('stepResearch'); }
+      else if (stage === 'SCRIPT') { done('stepResearch'); active('stepScript'); }
+      else if (stage === 'VOICE_GENERATION' || stage === 'TIMELINE' || stage === 'SUBTITLE') { done('stepResearch'); done('stepScript'); active('stepVoice'); }
+      else if (stage === 'VISUAL_GENERATION' || stage === 'COMPOSITING') { done('stepResearch'); done('stepScript'); done('stepVoice'); active('stepVisual'); }
+      else if (stage === 'COMPLETED') { done('stepResearch'); done('stepScript'); done('stepVoice'); done('stepVisual'); }
+    }
+
+    async function showPreview(pId) {
+      document.getElementById('previewCard').classList.remove('hidden');
+      const player = document.getElementById('videoPlayer');
+      player.src = `/media/${pId}/video`;
+      player.load();
+
+      document.getElementById('downloadVideoBtn').href = `/media/${pId}/artifact/final.mp4`;
+      document.getElementById('downloadSubBtn').href = `/media/${pId}/artifact/subtitle.srt`;
+      document.getElementById('downloadScriptBtn').href = `/media/${pId}/artifact/script.txt`;
+      document.getElementById('downloadMetaBtn').href = `/media/${pId}/artifact/metadata.json`;
+
+      try {
+        const metaRes = await fetch(`/media/${pId}/artifact/metadata.json`);
+        const meta = await metaRes.json();
+        document.getElementById('videoTitle').innerText = meta.youtube_title || 'Video Hoàn Thiện';
+        document.getElementById('tiktokCaption').innerText = meta.tiktok_caption || '';
+      } catch (e) {}
+    }
+
+    async function regenerateScene(sceneId) {
+      if (!confirm(`Bạn có chắc muốn tạo lại Cảnh ${sceneId} không?`)) return;
+      await fetch(`/api/regenerate/${activeProjectId}/${sceneId}`, { method: 'POST' });
+      if (pollInterval) clearInterval(pollInterval);
+      pollInterval = setInterval(pollProgress, 2000);
+    }
+
+    function selectProject(pId) {
+      activeProjectId = pId;
+      document.getElementById('projectIdDisplay').innerText = `ID Dự Án: ${pId}`;
+      showPreview(pId);
+      pollProgress();
+    }
+
+    function copyCaption() {
+      const text = document.getElementById('tiktokCaption').innerText;
+      navigator.clipboard.writeText(text);
+      alert('Đã sao chép TikTok Caption vào clipboard!');
+    }
+
+    function openSettingsModal() { document.getElementById('settingsModal').classList.remove('hidden'); }
+    function closeSettingsModal() { document.getElementById('settingsModal').classList.add('hidden'); }
+
+    async function saveSettings() {
+      const gemini = document.getElementById('geminiKeyInput').value.trim();
+      const openai = document.getElementById('openaiKeyInput').value.trim();
+      await fetch('/api/settings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ gemini_api_key: gemini, openai_api_key: openai })
+      });
+      alert('Đã lưu cài đặt API Keys thành công!');
+      closeSettingsModal();
+    }
+
+    // Khởi tạo
+    loadProjects();
+  </script>
+</body>
+</html>
