@@ -36,8 +36,8 @@ class GenerateRequest(BaseModel):
     platform: str = "tiktok"
     style: str = "Cinematic Documentary"
     llm_model: str = "gemini-3.8-flash"
-    image_model: str = "real_media"
-    video_model: str = "opencut_real"
+    image_model: str = "auto"
+    video_model: str = "wan2.1"
     voice: str = "namminh"
     gemini_key: Optional[str] = None
     openai_key: Optional[str] = None
@@ -45,6 +45,7 @@ class GenerateRequest(BaseModel):
 class SettingsUpdateRequest(BaseModel):
     gemini_api_key: Optional[str] = None
     fal_api_key: Optional[str] = None
+    replicate_api_token: Optional[str] = None
     openai_api_key: Optional[str] = None
     pexels_api_key: Optional[str] = None
     comfyui_server_url: Optional[str] = None
@@ -188,11 +189,17 @@ async def get_random_live_topic(category: Optional[str] = "all"):
 async def get_system_settings():
     gemini_key = os.getenv("GEMINI_API_KEY") or settings.GEMINI_API_KEY
     openai_key = os.getenv("OPENAI_API_KEY") or settings.OPENAI_API_KEY
+    fal_key = os.getenv("FAL_KEY") or settings.FAL_KEY
+    replicate_token = os.getenv("REPLICATE_API_TOKEN") or settings.REPLICATE_API_TOKEN
     return {
         "has_gemini_key": bool(gemini_key),
         "gemini_key_preview": f"{gemini_key[:6]}...{gemini_key[-4:]}" if gemini_key and len(gemini_key) > 10 else None,
         "has_openai_key": bool(openai_key),
         "openai_key_preview": f"{openai_key[:6]}...{openai_key[-4:]}" if openai_key and len(openai_key) > 10 else None,
+        "has_fal_key": bool(fal_key),
+        "fal_key_preview": f"{fal_key[:6]}...{fal_key[-4:]}" if fal_key and len(fal_key) > 10 else None,
+        "has_replicate_token": bool(replicate_token),
+        "replicate_token_preview": f"{replicate_token[:6]}...{replicate_token[-4:]}" if replicate_token and len(replicate_token) > 10 else None,
         "comfyui_server_url": settings.COMFYUI_SERVER_URL
     }
 
@@ -218,6 +225,10 @@ async def update_system_settings(req: SettingsUpdateRequest):
         keys_map["FAL_KEY"] = req.fal_api_key
         os.environ["FAL_KEY"] = req.fal_api_key
         settings.FAL_KEY = req.fal_api_key
+    if req.replicate_api_token:
+        keys_map["REPLICATE_API_TOKEN"] = req.replicate_api_token
+        os.environ["REPLICATE_API_TOKEN"] = req.replicate_api_token
+        settings.REPLICATE_API_TOKEN = req.replicate_api_token
     if req.openai_api_key:
         keys_map["OPENAI_API_KEY"] = req.openai_api_key
         os.environ["OPENAI_API_KEY"] = req.openai_api_key

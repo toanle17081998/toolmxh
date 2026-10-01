@@ -171,28 +171,35 @@
 
           <!-- Tác vụ 2: Tạo hình ảnh Visual (Visual Generator) -->
           <div>
-            <label class="block text-xs font-semibold text-slate-300 mb-1 flex items-center space-x-1">
-              <span>🎨 2. Tạo hình ảnh Visual (Visual Engine Đa Dạng Thông Minh)</span>
+            <label class="block text-xs font-semibold text-slate-300 mb-1 flex items-center justify-between">
+              <span class="flex items-center space-x-1">
+                <span>🎨 2. Sinh Visual Tham Chiếu (AI Visual Engine)</span>
+              </span>
+              <span class="text-[10px] text-emerald-400 font-normal">Bám sát 100% kịch bản</span>
             </label>
             <select id="imageModelSelect" class="w-full bg-slate-950 border border-slate-700/80 rounded-lg px-2.5 py-1.5 text-xs text-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500">
-              <option value="real_media" selected>✨ Visual Đa Dạng Thông Minh (Tự Động Kết Hợp Tư Liệu Thật 100% & 8K Bám Sát Từng Cảnh)</option>
-              <option value="anime_media">🎨 Hoạt Hình / Anime Nghệ Thuật (Chân Thực, Sống Động)</option>
-              <option value="fal_flux">⚡ Fal.ai FLUX.1 Schnell (AI Đối Tác OpenCut)</option>
-              <option value="dall-e-3">🖼️ OpenAI DALL-E 3 HD (Cần OpenAI Credit)</option>
+              <option value="auto" selected>🎯 Tự Động Bám Sát Kịch Bản 100% (Ưu tiên DALL-E 3 / Gemini Imagen / FLUX)</option>
+              <option value="dall-e-3">🖼️ OpenAI DALL-E 3 HD (Cực nét, chuẩn xác từng chi tiết kịch bản)</option>
+              <option value="gemini">💎 Google Imagen 3 / Gemini Vision (Điện ảnh, góc máy sâu)</option>
+              <option value="flux">⚡ FLUX.1 AI Generator (Miễn Phí 100%, không cần key)</option>
             </select>
           </div>
 
-          <!-- Tác vụ 3: Chuyển động Video (Video Footage & AI Engine) -->
+          <!-- Tác vụ 3: Sinh Chuyển Động Video (AI Generative Video Engine) -->
           <div>
-            <label class="block text-xs font-semibold text-slate-300 mb-1 flex items-center space-x-1">
-              <span>🎬 3. Tạo chuyển động Video (Video Engine Động Thật 100%)</span>
+            <label class="block text-xs font-semibold text-slate-300 mb-1 flex items-center justify-between">
+              <span class="flex items-center space-x-1">
+                <span>🎬 3. Sinh Video Chuyển Động AI (SOTA Generative Models)</span>
+              </span>
+              <span class="text-[10px] text-indigo-400 font-normal">Wan-Video / LTX / Hunyuan</span>
             </label>
             <select id="videoModelSelect" class="w-full bg-slate-950 border border-slate-700/80 rounded-lg px-2.5 py-1.5 text-xs text-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500">
-              <option value="opencut_real" selected>🎬 OpenCut Real Dynamic Footage (Video Động Thật 100% - Kho Tư Liệu NASA & Kho Video Thế Giới)</option>
-              <option value="fal_minimax">🌟 Fal.ai Minimax Hailuo Video (AI Sinh Video Chuyển Động Thật)</option>
-              <option value="veo-3.1-generate-preview">🌟 Google Veo 3.1 Cinema (Cần Google Billing)</option>
-              <option value="comfyui">🖥️ Local ComfyUI (Wan 2.1 / LTX-Video)</option>
-              <option value="kenburns">🖼️ Ảnh tĩnh chuyển động Camera (Ken Burns FX)</option>
+              <option value="wan2.1" selected>🌟 Wan 2.1 Video (Alibaba Wan-Video - SOTA Chân Thực Điện Ảnh)</option>
+              <option value="wan2.1-14b">🌟 Wan 2.1 14B Cinema (Alibaba 14B - Đỉnh cao chất lượng Hollywood)</option>
+              <option value="ltx">⚡ LTX-Video (Lightricks - Real-Time DiT Siêu Tốc)</option>
+              <option value="hunyuan">🎬 HunyuanVideo (Tencent 13B - Độ Phân Giải Cao)</option>
+              <option value="semantic_ai">🎯 Semantic Cinematic FX (Khớp 100% Kịch Bản - Không Cần Card Rời)</option>
+              <option value="comfyui">🖥️ Local ComfyUI (Wan 2.1 / LTX-Video Node)</option>
             </select>
           </div>
 
@@ -440,10 +447,17 @@
         </div>
 
         <div>
-          <label class="block font-bold text-slate-300 mb-1">Fal.ai API Key (Chuẩn Đối Tác OpenCut)</label>
+          <label class="block font-bold text-slate-300 mb-1">Fal.ai API Key (Chạy Wan 2.1, LTX-Video, HunyuanVideo)</label>
           <input type="password" id="falKeyInput" placeholder="fal_key_..."
             class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-slate-100 focus:ring-2 focus:ring-indigo-500">
-          <p class="text-[11px] text-slate-500 mt-1">Dùng để kích hoạt FLUX.1 Schnell và Minimax Video theo chuẩn OpenCut.</p>
+          <p class="text-[11px] text-slate-500 mt-1">Hỗ trợ Cloud GPU sinh video Wan 2.1 (1.3B/14B), LTX-Video và HunyuanVideo trong 15-30 giây.</p>
+        </div>
+
+        <div>
+          <label class="block font-bold text-slate-300 mb-1">Replicate API Token (Tùy chọn thay thế)</label>
+          <input type="password" id="replicateTokenInput" placeholder="r8_..."
+            class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-slate-100 focus:ring-2 focus:ring-indigo-500">
+          <p class="text-[11px] text-slate-500 mt-1">Chạy mô hình Wan 2.1, LTX-Video, HunyuanVideo trên nền tảng Replicate.</p>
         </div>
 
         <div>
@@ -987,18 +1001,35 @@
       alert('Đã sao chép TikTok Caption vào clipboard!');
     }
 
-    function openSettingsModal() { document.getElementById('settingsModal').classList.remove('hidden'); }
+    async function openSettingsModal() {
+      try {
+        const res = await fetch('/api/settings');
+        const data = await res.json();
+        if (data.gemini_key_preview) document.getElementById('geminiKeyInput').placeholder = data.gemini_key_preview;
+        if (data.openai_key_preview) document.getElementById('openaiKeyInput').placeholder = data.openai_key_preview;
+        if (data.fal_key_preview) document.getElementById('falKeyInput').placeholder = data.fal_key_preview;
+        if (data.replicate_token_preview) document.getElementById('replicateTokenInput').placeholder = data.replicate_token_preview;
+      } catch (e) {}
+      document.getElementById('settingsModal').classList.remove('hidden');
+    }
     function closeSettingsModal() { document.getElementById('settingsModal').classList.add('hidden'); }
 
     async function saveSettings() {
       const gemini = document.getElementById('geminiKeyInput').value.trim();
       const fal = document.getElementById('falKeyInput').value.trim();
+      const replicate = document.getElementById('replicateTokenInput').value.trim();
       const openai = document.getElementById('openaiKeyInput').value.trim();
       const pexels = document.getElementById('pexelsKeyInput').value.trim();
       await fetch('/api/settings', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ gemini_api_key: gemini, fal_api_key: fal, openai_api_key: openai, pexels_api_key: pexels })
+        body: JSON.stringify({
+          gemini_api_key: gemini || null,
+          fal_api_key: fal || null,
+          replicate_api_token: replicate || null,
+          openai_api_key: openai || null,
+          pexels_api_key: pexels || null
+        })
       });
       alert('Đã lưu cài đặt API Keys thành công!');
       closeSettingsModal();
