@@ -211,27 +211,53 @@ class VietnameseVideoFactory:
             # Bước A: AI Sinh ảnh tĩnh tham chiếu (T2I)
             state_mgr.update_scene_status(s_idx, SceneStatus.GENERATING_IMAGE)
             self.log(f"Scene {s_idx:02d}/{len(timeline.scenes):02d}: Đang sinh ảnh tham chiếu AI...")
-            await self.image_gen.generate_image(
-                prompt=img_prompt,
-                output_path=str(img_path),
-                width=width,
-                height=height,
-                seed=s_idx * 1000 + 42
-            )
+            try:
+                await self.image_gen.generate_image(
+                    prompt=img_prompt,
+                    output_path=str(img_path),
+                    width=width,
+                    height=height,
+                    seed=s_idx * 1000 + 42
+                )
+            except Exception as img_err:
+                self.log(f"Image Provider gặp sự cố ({img_err}), tự động chuyển sang mô hình dự phòng an toàn...", style="yellow")
+                from app.providers.image.real_media import RealVisualMediaEngine
+                fallback_img = RealVisualMediaEngine()
+                await fallback_img.generate_image(
+                    prompt=img_prompt,
+                    output_path=str(img_path),
+                    width=width,
+                    height=height,
+                    seed=s_idx * 1000 + 42
+                )
             state_mgr.update_scene_status(s_idx, SceneStatus.IMAGE_DONE, image_path=str(img_path))
 
             # Bước B: Chuyển đổi ảnh thành video điện ảnh mượt mà (I2V)
             state_mgr.update_scene_status(s_idx, SceneStatus.GENERATING_VIDEO)
             self.log(f"Scene {s_idx:02d}/{len(timeline.scenes):02d}: Đang sinh video chuyển động khớp audio ({scene_timing.duration:.2f}s)...")
-            await self.video_gen.generate_image_to_video(
-                image_path=str(img_path),
-                prompt=vid_prompt,
-                output_path=str(vid_path),
-                duration_seconds=scene_timing.duration,
-                width=width,
-                height=height,
-                seed=s_idx * 1000 + 42
-            )
+            try:
+                await self.video_gen.generate_image_to_video(
+                    image_path=str(img_path),
+                    prompt=vid_prompt,
+                    output_path=str(vid_path),
+                    duration_seconds=scene_timing.duration,
+                    width=width,
+                    height=height,
+                    seed=s_idx * 1000 + 42
+                )
+            except Exception as vid_err:
+                self.log(f"Video Provider gặp sự cố ({vid_err}), tự động chuyển sang Semantic Motion Engine...", style="yellow")
+                from app.providers.video.semantic_engine import SemanticMotionVideoEngine
+                fallback_vid = SemanticMotionVideoEngine()
+                await fallback_vid.generate_image_to_video(
+                    image_path=str(img_path),
+                    prompt=vid_prompt,
+                    output_path=str(vid_path),
+                    duration_seconds=scene_timing.duration,
+                    width=width,
+                    height=height,
+                    seed=s_idx * 1000 + 42
+                )
             state_mgr.update_scene_status(
                 s_idx,
                 SceneStatus.VIDEO_DONE,
