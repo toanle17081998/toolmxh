@@ -8,7 +8,6 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-  <style>
     body { font-family: 'Plus Jakarta Sans', sans-serif; }
     .glass-panel { background: rgba(18, 24, 38, 0.75); backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 0.08); }
     .glow-btn { box-shadow: 0 0 25px -5px rgba(99, 102, 241, 0.6); }
@@ -16,6 +15,32 @@
     ::-webkit-scrollbar { width: 6px; }
     ::-webkit-scrollbar-track { background: #0b0f19; }
     ::-webkit-scrollbar-thumb { background: #1f293d; border-radius: 4px; }
+
+    @keyframes shimmer {
+      0% { transform: translateX(-100%); }
+      100% { transform: translateX(200%); }
+    }
+    .progress-shimmer {
+      position: relative;
+      overflow: hidden;
+    }
+    .progress-shimmer::after {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.35), transparent);
+      animation: shimmer 2s infinite ease-in-out;
+    }
+    .smooth-progress {
+      transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .pulse-subtle {
+      animation: pulseSubtle 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    }
+    @keyframes pulseSubtle {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.75; }
+    }
   </style>
 </head>
 <body class="bg-[#080c14] text-slate-100 min-h-screen flex flex-col">
@@ -215,9 +240,11 @@
         </div>
 
         <button id="generateBtn" onclick="startGeneration()"
-          class="w-full py-3.5 px-4 bg-gradient-to-r from-indigo-600 via-indigo-500 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white font-bold text-sm rounded-xl transition duration-200 flex items-center justify-center space-x-2 glow-btn">
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-          <span>SINH VIDEO HOÀN CHỈNH</span>
+          class="w-full py-3.5 px-4 bg-gradient-to-r from-indigo-600 via-indigo-500 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white font-bold text-sm rounded-xl transition-all duration-300 flex items-center justify-center space-x-2.5 glow-btn active:scale-95 shadow-lg">
+          <span id="generateBtnIcon">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+          </span>
+          <span id="generateBtnText">SINH VIDEO HOÀN CHỈNH</span>
         </button>
       </div>
 
@@ -250,16 +277,24 @@
         </div>
 
         <!-- Progress Bar -->
-        <div class="w-full bg-slate-800/80 rounded-full h-2.5 overflow-hidden">
-          <div id="progressBar" class="bg-gradient-to-r from-indigo-500 to-violet-500 h-2.5 rounded-full transition-all duration-300" style="width: 0%"></div>
+        <div class="w-full bg-slate-900/90 rounded-full h-3 p-0.5 border border-slate-800/80 overflow-hidden shadow-inner">
+          <div id="progressBar" class="bg-gradient-to-r from-indigo-500 via-purple-500 to-emerald-400 h-full rounded-full smooth-progress" style="width: 0%"></div>
         </div>
 
         <!-- Live Step Indicators -->
         <div class="grid grid-cols-4 gap-2 pt-1 text-center text-xs font-semibold">
-          <div id="stepResearch" class="py-1.5 px-1 bg-slate-900/60 rounded-lg text-slate-500 border border-slate-800">1. Research</div>
-          <div id="stepScript" class="py-1.5 px-1 bg-slate-900/60 rounded-lg text-slate-500 border border-slate-800">2. Script</div>
-          <div id="stepVoice" class="py-1.5 px-1 bg-slate-900/60 rounded-lg text-slate-500 border border-slate-800">3. Voice & Sub</div>
-          <div id="stepVisual" class="py-1.5 px-1 bg-slate-900/60 rounded-lg text-slate-500 border border-slate-800">4. Visual AI</div>
+          <div id="stepResearch" class="py-2 px-1 bg-slate-900/60 rounded-xl text-slate-500 border border-slate-800 transition-all duration-300 flex items-center justify-center space-x-1">
+            <span>1. Nghiên Cứu</span>
+          </div>
+          <div id="stepScript" class="py-2 px-1 bg-slate-900/60 rounded-xl text-slate-500 border border-slate-800 transition-all duration-300 flex items-center justify-center space-x-1">
+            <span>2. Kịch Bản</span>
+          </div>
+          <div id="stepVoice" class="py-2 px-1 bg-slate-900/60 rounded-xl text-slate-500 border border-slate-800 transition-all duration-300 flex items-center justify-center space-x-1">
+            <span>3. Giọng & Sub</span>
+          </div>
+          <div id="stepVisual" class="py-2 px-1 bg-slate-900/60 rounded-xl text-slate-500 border border-slate-800 transition-all duration-300 flex items-center justify-center space-x-1">
+            <span>4. Visual AI</span>
+          </div>
         </div>
 
         <!-- Scene Progress Table -->
@@ -645,13 +680,131 @@
       `).join('');
     }
 
+    const STAGE_CONFIG = {
+      'CREATED': { label: '🚀 Đang khởi tạo pipeline dự án...', step: 'RESEARCH', defaultPct: 5 },
+      'RESEARCH': { label: '🔍 Đang phân tích tư liệu & sự kiện giật gân...', step: 'RESEARCH', defaultPct: 10 },
+      'SCRIPT': { label: '✍️ Đang viết kịch bản tiếng Việt chuẩn viral...', step: 'SCRIPT', defaultPct: 20 },
+      'STORYBOARD': { label: '🎬 Đang thiết kế phân cảnh & chỉ đạo góc máy...', step: 'SCRIPT', defaultPct: 30 },
+      'VOICE_GENERATION': { label: '🎙️ Đang tổng hợp giọng đọc Studio điện ảnh...', step: 'VOICE', defaultPct: 40 },
+      'TIMELINE': { label: '⏱️ Đang căn chỉnh nhịp timeline chính xác...', step: 'VOICE', defaultPct: 45 },
+      'SUBTITLE': { label: '📝 Đang thiết kế phụ đề Karaoke highlight...', step: 'VOICE', defaultPct: 50 },
+      'VISUAL_GENERATION': { label: '📸 Đang sinh hình ảnh quang học thật & chuyển động 3D...', step: 'VISUAL', defaultPct: 65 },
+      'AUDIO_MIXING': { label: '🎵 Đang hòa âm BGM & giọng đọc Auto-Ducking...', step: 'VISUAL', defaultPct: 85 },
+      'COMPOSITING': { label: '🎞️ Đang kết xuất video master chất lượng cao...', step: 'VISUAL', defaultPct: 92 },
+      'QC': { label: '✨ Kiểm duyệt chất lượng video cuối cùng...', step: 'VISUAL', defaultPct: 98 },
+      'COMPLETED': { label: '🎉 Hoàn thành xuất sắc! Video đã sẵn sàng.', step: 'COMPLETED', defaultPct: 100 }
+    };
+
+    let currentDisplayPct = 0;
+    let targetDisplayPct = 0;
+    let progressAnimTimer = null;
+
+    function setSmoothProgress(pct) {
+      targetDisplayPct = Math.max(0, Math.min(100, pct));
+      if (!progressAnimTimer) {
+        progressAnimTimer = setInterval(() => {
+          if (currentDisplayPct < targetDisplayPct) {
+            currentDisplayPct = Math.min(targetDisplayPct, currentDisplayPct + 1);
+            document.getElementById('progressPercent').innerText = `${currentDisplayPct}%`;
+            document.getElementById('progressBar').style.width = `${currentDisplayPct}%`;
+          } else if (currentDisplayPct > targetDisplayPct) {
+            currentDisplayPct = targetDisplayPct;
+            document.getElementById('progressPercent').innerText = `${currentDisplayPct}%`;
+            document.getElementById('progressBar').style.width = `${currentDisplayPct}%`;
+          }
+        }, 25);
+      }
+    }
+
+    function resetGenerateBtn() {
+      const btn = document.getElementById('generateBtn');
+      const btnIcon = document.getElementById('generateBtnIcon');
+      const btnText = document.getElementById('generateBtnText');
+      if (btn) {
+        btn.disabled = false;
+        btn.classList.remove('opacity-75', 'cursor-not-allowed', 'scale-[0.99]');
+      }
+      if (btnIcon) btnIcon.innerHTML = `<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>`;
+      if (btnText) btnText.innerText = 'SINH VIDEO HOÀN CHỈNH';
+    }
+
+    function updateScenesGrid(scenesProgress) {
+      if (!scenesProgress || Object.keys(scenesProgress).length === 0) return;
+      document.getElementById('scenesContainer').classList.remove('hidden');
+      const grid = document.getElementById('scenesGrid');
+
+      Object.values(scenesProgress).forEach(sc => {
+        let card = document.getElementById(`scene-card-${sc.scene_id}`);
+        const isDone = sc.status === 'VIDEO_DONE';
+        const isFailed = sc.status === 'FAILED';
+        const statusHtml = isDone 
+          ? '<span class="text-emerald-400 font-bold flex items-center space-x-1"><span>✓</span><span>Đã Xong</span></span>'
+          : (isFailed 
+              ? '<span class="text-rose-400 font-semibold">Lỗi</span>' 
+              : '<span class="text-amber-300 font-medium animate-pulse flex items-center space-x-1"><span class="w-1.5 h-1.5 rounded-full bg-amber-400"></span><span>Đang xử lý...</span></span>');
+        
+        const cardBorder = isDone ? 'border-emerald-500/40 bg-slate-900/90 shadow-sm' : (isFailed ? 'border-rose-500/40 bg-slate-900/90' : 'border-slate-800/80 bg-slate-950/60');
+        const durText = sc.duration > 0 ? `${sc.duration.toFixed(1)}s` : '';
+
+        if (!card) {
+          card = document.createElement('div');
+          card.id = `scene-card-${sc.scene_id}`;
+          card.className = `p-2.5 rounded-xl border text-[11px] space-y-1.5 transition-all duration-300 ${cardBorder}`;
+          card.innerHTML = `
+            <div class="flex items-center justify-between font-bold">
+              <span class="text-slate-200">Cảnh ${sc.scene_id}</span>
+              <div id="sc-st-${sc.scene_id}">${statusHtml}</div>
+            </div>
+            <div class="flex items-center justify-between text-[10px] text-slate-400">
+              <span id="sc-dur-${sc.scene_id}">${durText}</span>
+              <div id="sc-act-${sc.scene_id}"></div>
+            </div>
+          `;
+          grid.appendChild(card);
+        } else {
+          card.className = `p-2.5 rounded-xl border text-[11px] space-y-1.5 transition-all duration-300 ${cardBorder}`;
+          const stEl = document.getElementById(`sc-st-${sc.scene_id}`);
+          if (stEl && stEl.innerHTML !== statusHtml) stEl.innerHTML = statusHtml;
+          const durEl = document.getElementById(`sc-dur-${sc.scene_id}`);
+          if (durEl && durEl.innerText !== durText) durEl.innerText = durText;
+        }
+
+        const actEl = document.getElementById(`sc-act-${sc.scene_id}`);
+        if (actEl && isDone && !actEl.hasChildNodes()) {
+          actEl.innerHTML = `<button onclick="regenerateScene(${sc.scene_id})" type="button" class="px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-indigo-300 border border-slate-700 transition active:scale-95 text-[10px]">Tạo lại</button>`;
+        }
+      });
+    }
+
     async function startGeneration() {
       const topic = document.getElementById('topicInput').value.trim();
       if (!topic) return alert('Vui lòng nhập chủ đề video!');
 
       const btn = document.getElementById('generateBtn');
+      const btnIcon = document.getElementById('generateBtnIcon');
+      const btnText = document.getElementById('generateBtnText');
+
+      // Phản hồi tức thì - Không có cảm giác khựng
       btn.disabled = true;
-      btn.classList.add('opacity-50');
+      btn.classList.add('opacity-75', 'cursor-not-allowed', 'scale-[0.99]');
+      if (btnIcon) btnIcon.innerHTML = '<div class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>';
+      if (btnText) btnText.innerText = 'Đang khởi động AI Studio...';
+
+      // Xóa scene cũ mượt mà
+      document.getElementById('scenesGrid').innerHTML = '';
+      document.getElementById('scenesContainer').classList.add('hidden');
+
+      // Phản hồi trực quan tức thì trên Monitor Card
+      document.getElementById('statusIndicator').className = 'w-2.5 h-2.5 rounded-full bg-indigo-400 animate-ping';
+      document.getElementById('currentStatusText').innerText = '🚀 Đang cấp phát pipeline dự án & kết nối AI...';
+      document.getElementById('projectIdDisplay').innerText = 'Đang kết nối...';
+      setSmoothProgress(5);
+      document.getElementById('progressBar').classList.add('progress-shimmer');
+      highlightStep('RESEARCH');
+
+      if (window.innerWidth < 1024) {
+        document.getElementById('monitorCard').scrollIntoView({ behavior: 'smooth' });
+      }
 
       const body = {
         topic: topic,
@@ -674,14 +827,16 @@
         activeProjectId = data.project_id;
         document.getElementById('projectIdDisplay').innerText = `ID Dự Án: ${activeProjectId}`;
         document.getElementById('statusIndicator').className = 'w-2.5 h-2.5 rounded-full bg-amber-400 animate-pulse';
-        document.getElementById('currentStatusText').innerText = 'Đang khởi động quy trình AI...';
-        
+        document.getElementById('currentStatusText').innerText = '🔍 Đang phân tích tư liệu & sự kiện giật gân...';
+        setSmoothProgress(10);
+
         if (pollInterval) clearInterval(pollInterval);
-        pollInterval = setInterval(pollProgress, 2000);
+        pollProgress();
+        pollInterval = setInterval(pollProgress, 1500);
       } catch (err) {
         alert('Lỗi khởi động: ' + err.message);
-        btn.disabled = false;
-        btn.classList.remove('opacity-50');
+        resetGenerateBtn();
+        document.getElementById('progressBar').classList.remove('progress-shimmer');
       }
     }
 
@@ -691,40 +846,29 @@
         const res = await fetch(`/api/progress/${activeProjectId}`);
         const data = await res.json();
         
-        const pct = Math.round(data.progress_percentage || 0);
-        document.getElementById('progressPercent').innerText = `${pct}%`;
-        document.getElementById('progressBar').style.width = `${pct}%`;
+        const rawPct = Math.round(data.progress_percentage || 0);
+        const stageConfig = STAGE_CONFIG[data.stage] || { label: `Đang xử lý: ${data.stage}`, step: null };
+        const displayPct = Math.max(rawPct, stageConfig.defaultPct || 0);
+        
+        setSmoothProgress(displayPct);
 
-        // Cập nhật stage
-        if (data.stage) {
-          document.getElementById('currentStatusText').innerText = `Đang xử lý: ${data.stage}`;
+        if (data.stage && data.stage !== 'FAILED') {
+          document.getElementById('currentStatusText').innerText = stageConfig.label;
           highlightStep(data.stage);
         }
 
-        // Render scene cards
-        if (data.scenes_progress && Object.keys(data.scenes_progress).length > 0) {
-          document.getElementById('scenesContainer').classList.remove('hidden');
-          const grid = document.getElementById('scenesGrid');
-          grid.innerHTML = Object.values(data.scenes_progress).map(sc => `
-            <div class="p-2 rounded-lg bg-slate-900 border border-slate-800 text-[11px] space-y-1">
-              <div class="flex items-center justify-between font-bold">
-                <span class="text-slate-300">Cảnh ${sc.scene_id}</span>
-                <span class="${sc.status === 'VIDEO_DONE' ? 'text-emerald-400' : 'text-amber-400'}">${sc.status === 'VIDEO_DONE' ? '✓' : '...'}</span>
-              </div>
-              <p class="text-[10px] text-slate-500">${sc.duration > 0 ? sc.duration.toFixed(1) + 's' : ''}</p>
-              ${sc.status === 'VIDEO_DONE' ? `
-                <button onclick="regenerateScene(${sc.scene_id})" class="w-full mt-1 text-[10px] py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-indigo-300 border border-slate-700">Tạo lại</button>
-              ` : ''}
-            </div>
-          `).join('');
+        // Cập nhật từng scene không gây chớp giật màn hình
+        if (data.scenes_progress) {
+          updateScenesGrid(data.scenes_progress);
         }
 
         if (data.stage === 'COMPLETED') {
           clearInterval(pollInterval);
+          setSmoothProgress(100);
           document.getElementById('statusIndicator').className = 'w-2.5 h-2.5 rounded-full bg-emerald-400';
-          document.getElementById('currentStatusText').innerText = 'Hoàn thành xuất sắc!';
-          document.getElementById('generateBtn').disabled = false;
-          document.getElementById('generateBtn').classList.remove('opacity-50');
+          document.getElementById('currentStatusText').innerText = '🎉 Hoàn thành xuất sắc! Video đã sẵn sàng.';
+          document.getElementById('progressBar').classList.remove('progress-shimmer');
+          resetGenerateBtn();
           showPreview(activeProjectId);
           loadProjects();
         } else if (data.stage === 'FAILED' || (data.task_info && data.task_info.status === 'FAILED')) {
@@ -732,8 +876,8 @@
           document.getElementById('statusIndicator').className = 'w-2.5 h-2.5 rounded-full bg-red-500';
           const errDetail = (data.errors && data.errors.length > 0) ? data.errors[data.errors.length - 1] : (data.task_info && data.task_info.error ? data.task_info.error : 'Quá trình gặp sự cố');
           document.getElementById('currentStatusText').innerText = `Lỗi: ${errDetail}`;
-          document.getElementById('generateBtn').disabled = false;
-          document.getElementById('generateBtn').classList.remove('opacity-50');
+          document.getElementById('progressBar').classList.remove('progress-shimmer');
+          resetGenerateBtn();
         }
       } catch (e) {
         console.error(e);
@@ -741,15 +885,51 @@
     }
 
     function highlightStep(stage) {
-      const reset = id => document.getElementById(id).className = "py-1.5 px-1 bg-slate-900/60 rounded-lg text-slate-500 border border-slate-800";
-      const active = id => document.getElementById(id).className = "py-1.5 px-1 bg-indigo-600/20 text-indigo-400 border border-indigo-500 font-bold rounded-lg animate-pulse";
-      const done = id => document.getElementById(id).className = "py-1.5 px-1 bg-emerald-500/20 text-emerald-400 border border-emerald-500 font-bold rounded-lg";
+      const reset = (id, text) => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        el.className = "py-2 px-1 bg-slate-900/60 rounded-xl text-slate-500 border border-slate-800 transition-all duration-300 flex items-center justify-center space-x-1";
+        el.innerHTML = `<span>${text}</span>`;
+      };
+      const active = (id, text) => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        el.className = "py-2 px-1 bg-indigo-600/20 text-indigo-300 border border-indigo-500 font-bold rounded-xl shadow-lg shadow-indigo-500/20 transition-all duration-300 flex items-center justify-center space-x-1.5 animate-pulse";
+        el.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-indigo-400"></span><span>${text}</span>`;
+      };
+      const done = (id, text) => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        el.className = "py-2 px-1 bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 font-bold rounded-xl transition-all duration-300 flex items-center justify-center space-x-1";
+        el.innerHTML = `<span>✓ ${text}</span>`;
+      };
 
-      if (stage === 'RESEARCH') { active('stepResearch'); }
-      else if (stage === 'SCRIPT') { done('stepResearch'); active('stepScript'); }
-      else if (stage === 'VOICE_GENERATION' || stage === 'TIMELINE' || stage === 'SUBTITLE') { done('stepResearch'); done('stepScript'); active('stepVoice'); }
-      else if (stage === 'VISUAL_GENERATION' || stage === 'COMPOSITING') { done('stepResearch'); done('stepScript'); done('stepVoice'); active('stepVisual'); }
-      else if (stage === 'COMPLETED') { done('stepResearch'); done('stepScript'); done('stepVoice'); done('stepVisual'); }
+      if (stage === 'CREATED' || stage === 'RESEARCH') {
+        active('stepResearch', '1. Nghiên Cứu');
+        reset('stepScript', '2. Kịch Bản');
+        reset('stepVoice', '3. Giọng & Sub');
+        reset('stepVisual', '4. Visual AI');
+      } else if (stage === 'SCRIPT' || stage === 'STORYBOARD') {
+        done('stepResearch', 'Nghiên Cứu');
+        active('stepScript', '2. Kịch Bản');
+        reset('stepVoice', '3. Giọng & Sub');
+        reset('stepVisual', '4. Visual AI');
+      } else if (stage === 'VOICE_GENERATION' || stage === 'TIMELINE' || stage === 'SUBTITLE') {
+        done('stepResearch', 'Nghiên Cứu');
+        done('stepScript', 'Kịch Bản');
+        active('stepVoice', '3. Giọng & Sub');
+        reset('stepVisual', '4. Visual AI');
+      } else if (stage === 'VISUAL_GENERATION' || stage === 'AUDIO_MIXING' || stage === 'COMPOSITING' || stage === 'QC') {
+        done('stepResearch', 'Nghiên Cứu');
+        done('stepScript', 'Kịch Bản');
+        done('stepVoice', 'Giọng & Sub');
+        active('stepVisual', '4. Visual AI');
+      } else if (stage === 'COMPLETED') {
+        done('stepResearch', 'Nghiên Cứu');
+        done('stepScript', 'Kịch Bản');
+        done('stepVoice', 'Giọng & Sub');
+        done('stepVisual', 'Visual AI');
+      }
     }
 
     async function showPreview(pId) {
