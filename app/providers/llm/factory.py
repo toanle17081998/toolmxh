@@ -13,8 +13,8 @@ def get_llm_provider(preference: Optional[str] = None, model: Optional[str] = No
     gemini_key = os.getenv("GEMINI_API_KEY") or settings.GEMINI_API_KEY
     openai_key = os.getenv("OPENAI_API_KEY") or settings.OPENAI_API_KEY
 
-    # Mặc định model cao cấp Pro nếu có key
-    gemini_m = model or "gemini-2.5-pro"
+    # Mặc định model tốc độ cao, không bị rate-limit 429
+    gemini_m = model or "gemini-2.5-flash"
     openai_m = model or "gpt-4o"
 
     if pref == "gemini" and gemini_key:

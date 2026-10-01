@@ -19,6 +19,24 @@ class GeminiLLMProvider(LLMProvider):
         self.client = genai.Client(api_key=self.api_key)
         self.model = model
 
+    def _call_generate_content(self, contents: str, config: types.GenerateContentConfig):
+        """Gọi Gemini API với cơ chế tự động hạ cấp model nếu gặp 404 (model cũ) hoặc 429 (quota limit)."""
+        candidate_models = [self.model, "gemini-2.5-flash", "gemini-flash-latest"]
+        last_error = None
+        for m in candidate_models:
+            if not m:
+                continue
+            try:
+                return self.client.models.generate_content(
+                    model=m,
+                    contents=contents,
+                    config=config
+                )
+            except Exception as e:
+                last_error = e
+                continue
+        raise last_error
+
     async def research_topic(self, topic: str) -> Dict[str, Any]:
         prompt = f"""Bạn là một chuyên gia nghiên cứu tài liệu video khoa học và khám phá.
 Chủ đề: "{topic}"
@@ -34,8 +52,7 @@ Trả về định dạng JSON:
   "emotional_hook": "..."
 }}
 """
-        response = self.client.models.generate_content(
-            model=self.model,
+        response = self._call_generate_content(
             contents=prompt,
             config=types.GenerateContentConfig(
                 response_mime_type="application/json"
@@ -80,8 +97,7 @@ Yêu cầu nghiêm ngặt:
   ]
 }}
 """
-        response = self.client.models.generate_content(
-            model=self.model,
+        response = self._call_generate_content(
             contents=prompt,
             config=types.GenerateContentConfig(
                 response_mime_type="application/json"
@@ -138,8 +154,7 @@ Trả về định dạng JSON:
   ]
 }}
 """
-        response = self.client.models.generate_content(
-            model=self.model,
+        response = self._call_generate_content(
             contents=prompt,
             config=types.GenerateContentConfig(
                 response_mime_type="application/json"
@@ -168,8 +183,7 @@ Trả về JSON:
   "thumbnail_text": "Chữ ngắn gọn 3-4 từ giật gân để gắn lên thumbnail"
 }}
 """
-        response = self.client.models.generate_content(
-            model=self.model,
+        response = self._call_generate_content(
             contents=prompt,
             config=types.GenerateContentConfig(
                 response_mime_type="application/json"

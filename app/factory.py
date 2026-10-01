@@ -91,7 +91,13 @@ class VietnameseVideoFactory:
         # 1. RESEARCH
         state_mgr.update_stage(PipelineStage.RESEARCH, 5.0)
         self.log("Đang nghiên cứu chủ đề và sự kiện kịch tính...")
-        research_data = await self.llm.research_topic(topic)
+        try:
+            research_data = await self.llm.research_topic(topic)
+        except Exception as e:
+            self.log(f"LLM gặp lỗi ({e}), tự động chuyển sang Offline Brain...", style="bold yellow")
+            from app.providers.llm.offline import OfflineBrainProvider
+            self.llm = OfflineBrainProvider()
+            research_data = await self.llm.research_topic(topic)
         with open(p_dir / "research" / "research.json", "w", encoding="utf-8") as f:
             json.dump(research_data, f, ensure_ascii=False, indent=2)
 
