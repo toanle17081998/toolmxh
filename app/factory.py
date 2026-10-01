@@ -30,7 +30,7 @@ if sys.platform == "win32":
     except Exception:
         pass
 
-console = Console(force_terminal=True, legacy_windows=False)
+console = Console()
 
 class VietnameseVideoFactory:
     """Orchestrator trung tâm sản xuất Video AI tiếng Việt 100% tự động."""
@@ -70,7 +70,13 @@ class VietnameseVideoFactory:
 
     def log(self, message: str, style: str = "bold cyan"):
         if self.console_output:
-            console.print(f"[{style}]▶ {message}[/{style}]")
+            try:
+                console.print(f"[{style}]▶ {message}[/{style}]")
+            except Exception:
+                try:
+                    print(f"▶ {message}")
+                except Exception:
+                    pass
 
     async def generate_video(
         self,
@@ -275,7 +281,10 @@ class VietnameseVideoFactory:
             table.add_row(f"{s_idx}", f"{scene_timing.duration:.1f}s", "[bold green]GENERATED ✓[/bold green]")
 
         if self.console_output:
-            console.print(table)
+            try:
+                console.print(table)
+            except Exception:
+                pass
 
         # 7. AUDIO MIXING (Auto-Ducking)
         state_mgr.update_stage(PipelineStage.AUDIO_MIXING, 75.0)

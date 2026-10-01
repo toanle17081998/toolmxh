@@ -1046,7 +1046,7 @@
           resetGenerateBtn();
           showPreview(activeProjectId);
           loadProjects();
-        } else if (data.stage === 'FAILED' || (data.task_info && data.task_info.status === 'FAILED')) {
+        } else if (data.is_running !== true && (data.stage === 'FAILED' || (data.task_info && data.task_info.status === 'FAILED'))) {
           clearInterval(pollInterval);
           document.getElementById('statusIndicator').className = 'w-2.5 h-2.5 rounded-full bg-red-500';
           const errDetail = (data.errors && data.errors.length > 0) ? data.errors[data.errors.length - 1] : (data.task_info && data.task_info.error ? data.task_info.error : 'Quá trình gặp sự cố');

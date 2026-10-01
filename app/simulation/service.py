@@ -3,7 +3,6 @@ import json
 import logging
 import shutil
 import time
-import weakref
 from datetime import datetime
 from pathlib import Path
 from app.config import settings
@@ -15,9 +14,9 @@ from app.simulation.scenario import ScenarioGenerator
 from app.simulation.blender_renderer import BlenderRenderer
 from app.simulation.audio import SimulationAudioManager
 from app.simulation.media import validate_media
+from app.simulation.lock import ProjectLease
 
 logger = logging.getLogger(__name__)
-_project_locks = weakref.WeakKeyDictionary()
 
 
 def prepare_simulation_project(project_id, config):
@@ -34,10 +33,7 @@ class SimulationVideoService:
         self.renderer = renderer or BlenderRenderer()
 
     async def generate_video(self, project_id, config):
-        loop = asyncio.get_running_loop()
-        locks = _project_locks.setdefault(loop, {})
-        lock = locks.setdefault(project_id, asyncio.Lock())
-        async with lock:
+        with ProjectLease(ProjectStateManager(project_id).project_dir):
             return await self._generate(project_id, config)
 
     async def _generate(self, project_id, config):
@@ -152,10 +148,12 @@ class SimulationVideoService:
             if settings.BLENDER_CLEANUP:
                 for segment in scenario.segments:
                     directory = root/'segments'/f'{segment.index:03d}'
-                    for image in (directory/'frames').glob('*.png'):
-                        image.unlink()
-                    for scene in directory.glob('*.blend*'):
-                        scene.unlink()
+                    for working_dir in [directory,*list((directory/'attempts').glob('*'))]:
+                        for temporary in [*list((working_dir/'frames').glob('*.png')),*list(working_dir.glob('*.blend*'))]:
+                            try:
+                                temporary.unlink()
+                            except OSError as error:
+                                record('cleanup_deferred',segment_id=segment.index,path=str(temporary),error=str(error))
             save(PipelineStage.COMPLETED,100,'Simulation video ready')
             record('completed',seed=scenario.seed,duration=scenario.duration)
             return {'project_id':project_id,'final_video_path':str(exported/'final.mp4'),

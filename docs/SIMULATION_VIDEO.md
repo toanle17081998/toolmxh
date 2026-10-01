@@ -79,7 +79,9 @@ POST the existing endpoint:
 
 Download `/media/{id}/artifact/final.mp4`, `scenario.json`, `metadata.json` or `thumbnail.png`. `/media/{id}/video` streams the same export.
 
-The job runner is the repository's **in-process** task mechanism. Use one Uvicorn worker; a multi-worker setup would need an external broker/project locks and a cross-process render limiter. A crash/restart preserves segment files/state but does not automatically enqueue work: resume using the UI button or endpoint. Parallelism is available across projects up to the render limit; segments within a project render sequentially. This avoids concurrent mutation of the same project JSON. Generation is not a durable distributed queue.
+The job runner is the repository's **in-process** task mechanism. OS-backed project leases prevent CLI and web workers from owning the same project simultaneously and release automatically when a worker exits. Progress detects ownership across processes, and regeneration holds the lease while updating state. Use one Uvicorn worker; a multi-worker setup still needs an external broker and a cross-process render limiter. A crash/restart preserves segment files/state but does not automatically enqueue work: resume using the UI button or endpoint. Parallelism is available across projects up to each process's render limit; segments within a project render sequentially. Generation is not a durable distributed queue.
+
+Each render attempt writes to a unique private directory, so an orphan Blender child from a hard-killed worker cannot overwrite a resumed attempt's frames. Graceful cancellation kills/waits for Blender; a hard kill may leave its child running until rendering finishes. Stop or wait for that orphan to reclaim GPU resources before starting more jobs. The project's completed segments remain reusable.
 
 ## Architecture and render pipeline
 
@@ -108,8 +110,13 @@ outputs/projects/{id}/
   scenario.json
   segments/001/
     scenario.json       # renderer payload: scenario + segment + resolution
-    scene.blend         # retained on failure / --keep-scenes
-    frames/000001.png   # retained on failure / --keep-scenes
+    scene.blend         # latest successful scene; retained with --keep-scenes
+    attempts/{attempt_id}/
+      scenario.json
+      scene.blend       # retained on failure / --keep-scenes
+      frames/000001.png # private attempt output
+      blender.log       # full stdout/stderr, including failed attempts
+      ffmpeg.log
     preview.png
     blender.log         # full stdout/stderr
     ffmpeg.log
@@ -126,7 +133,7 @@ outputs/{id}/
   thumbnail.png
 ```
 
-JSONL logs include video/segment IDs, seeds, duration, obstacle list, attempt/retry count, elapsed render/composition time and error output. Segment `timing.json` separates Blender and FFmpeg execution time. PNGs and .blend files are cleaned only after completed export; MP4 segments, scene JSON, previews and logs remain available for resume/debugging.
+JSONL logs include video/segment IDs, seeds, duration, obstacle list, attempt/retry count, elapsed render/composition time and error output. Segment `timing.json` separates Blender and FFmpeg execution time. PNGs and .blend files are cleaned only after completed export; locked temporary files produce a `cleanup_deferred` log rather than invalidating a completed MP4. MP4 segments, scene JSON, previews and logs remain available for resume/debugging.
 
 The seed reproduces planning and deterministic animation. Bit-identical pixels/audio encodes are not guaranteed across different Blender versions, render engines, drivers or FFmpeg versions. Pin those versions and hardware for pixel-level reproducibility.
 

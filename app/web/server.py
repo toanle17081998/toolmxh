@@ -16,6 +16,7 @@ from app.core.topic_suggester import TopicExplorerService
 from app.models.project import ProjectConfig, PipelineStage, SceneStatus, VideoType
 from app.simulation.models import SimulationConfig
 from app.simulation.service import SimulationVideoService, prepare_simulation_project
+from app.simulation.lock import ProjectBusy, ProjectLease, project_is_running
 
 app = FastAPI(title="Vietnamese Generative Video Factory UI")
 
@@ -98,14 +99,14 @@ async def run_factory_task(project_id: str, req: GenerateRequest):
             active_projects[project_id] = {'status':'COMPLETED','result':res}
             return
         factory = VietnameseVideoFactory(
-            console_output=True,
+            console_output=False,
             voice=req.voice,
             gemini_key=req.gemini_key,
             openai_key=req.openai_key,
             llm_model=req.llm_model,
             image_model=req.image_model,
             video_model=req.video_model,
-            mascot=req.mascot or "dr_bear"
+            mascot=req.mascot or "auto"
         )
         res = await factory.generate_video(
             topic=req.topic,
@@ -115,9 +116,16 @@ async def run_factory_task(project_id: str, req: GenerateRequest):
             project_id=project_id
         )
         active_projects[project_id] = {"status": "COMPLETED", "result": res}
+    except ProjectBusy as error:
+        active_projects[project_id] = {'status':'RUNNING','message':str(error)}
     except Exception as e:
+        import traceback
+        traceback.print_exc()
         error_msg = str(e)
         active_projects[project_id] = {"status": "FAILED", "error": error_msg}
+        if req.video_type == VideoType.SIMULATION_VIDEO:
+            # The service persists failures while it still owns the project lease.
+            return
         try:
             state_mgr = ProjectStateManager(project_id)
             if state_mgr.state_file.exists():
@@ -158,7 +166,7 @@ async def get_progress(project_id: str):
     try:
         state = state_mgr.load_state()
         data = state.model_dump()
-        data['is_running'] = project_id in running_projects
+        data['is_running'] = project_id in running_projects or (state.config.video_type == VideoType.SIMULATION_VIDEO and project_is_running(state_mgr.project_dir))
         # Thêm thông tin kết quả nếu đã hoàn thành
         if project_id in active_projects:
             data["task_info"] = active_projects[project_id]
@@ -175,10 +183,15 @@ async def regenerate_scene(project_id: str, scene_id: int, background_tasks: Bac
     if state.config.video_type == VideoType.SIMULATION_VIDEO:
         if project_id in running_projects:
             raise HTTPException(status_code=409,detail='Project already running')
-        if scene_id not in state.segments_progress:
-            raise HTTPException(status_code=404,detail='Segment not found')
-        state.segments_progress[scene_id].status = 'PENDING'
-        state_mgr.save_state(state)
+        try:
+            with ProjectLease(state_mgr.project_dir):
+                state = state_mgr.load_state()
+                if scene_id not in state.segments_progress:
+                    raise HTTPException(status_code=404,detail='Segment not found')
+                state.segments_progress[scene_id].status = 'PENDING'
+                state_mgr.save_state(state)
+        except ProjectBusy as error:
+            raise HTTPException(status_code=409,detail=str(error)) from error
         return await resume_simulation(project_id,background_tasks)
     
     state_mgr.update_scene_status(scene_id, SceneStatus.PENDING)
@@ -205,7 +218,7 @@ async def resume_simulation(project_id: str, background_tasks: BackgroundTasks):
     state = manager.load_state()
     if state.config.video_type != VideoType.SIMULATION_VIDEO or state.config.simulation is None:
         raise HTTPException(status_code=400,detail='Resume endpoint is for simulation projects')
-    if project_id in running_projects:
+    if project_id in running_projects or project_is_running(manager.project_dir):
         raise HTTPException(status_code=409,detail='Project already running')
     req = GenerateRequest(video_type='simulation_video', **{k:v for k,v in state.config.simulation.model_dump().items()
                           if k in GenerateRequest.model_fields})
@@ -331,6 +344,10 @@ async def get_project_video(project_id: str):
     if not vid.exists():
         vid = settings.PROJECTS_DIR / project_id / "renders" / "master.mp4"
     if not vid.exists():
+        vid = settings.PROJECTS_DIR / project_id / "final" / "video.mp4"
+    if not vid.exists():
+        vid = settings.PROJECTS_DIR / project_id / "final.mp4"
+    if not vid.exists():
         raise HTTPException(status_code=404, detail="Video file not found")
     return FileResponse(str(vid), media_type="video/mp4")
 
@@ -343,6 +360,12 @@ async def get_artifact(project_id: str, filename: str):
     p = settings.OUTPUTS_DIR / project_id / filename
     if not p.exists():
         p = settings.PROJECTS_DIR / project_id / filename
+    if not p.exists() and filename == "metadata.json":
+        p = settings.PROJECTS_DIR / project_id / "metadata" / "metadata.json"
+    if not p.exists() and filename == "metadata.json":
+        p = settings.PROJECTS_DIR / project_id / "project.json"
+    if not p.exists() and filename == "final.mp4":
+        p = settings.PROJECTS_DIR / project_id / "final" / "video.mp4"
     if not p.exists():
         raise HTTPException(status_code=404, detail="File not found")
     return FileResponse(str(p), filename=filename)

@@ -4,6 +4,7 @@ import logging
 import shutil
 import time
 import weakref
+import uuid
 from pathlib import Path
 from app.config import settings, get_ffmpeg_binary
 
@@ -46,38 +47,41 @@ class BlenderRenderer:
         binary = self.check_available()
         directory = Path(directory).resolve()
         directory.mkdir(parents=True, exist_ok=True)
+        attempt_dir = directory/'attempts'/uuid.uuid4().hex
+        attempt_dir.mkdir(parents=True)
         payload = {'scenario': scenario.model_dump(), 'segment': segment.model_dump(), 'width': width, 'height': height,
-                   'engine': settings.BLENDER_RENDER_ENGINE, 'output_dir': str(directory)}
-        scenario_path = directory / 'scenario.json'
+                   'engine': settings.BLENDER_RENDER_ENGINE, 'output_dir': str(attempt_dir)}
+        scenario_path = attempt_dir / 'scenario.json'
         scenario_path.write_text(json.dumps(payload, indent=2), encoding='utf-8')
+        shutil.copyfile(scenario_path,directory/'scenario.json')
         loop = asyncio.get_running_loop()
         if loop not in _render_limits:
             _render_limits[loop] = asyncio.Semaphore(settings.BLENDER_MAX_PARALLEL_JOBS)
         started = time.monotonic()
         async with _render_limits[loop]:
-            # Clear stale frames on retry; keep logs and scene for debugging failed work.
-            frames = directory / 'frames'
+            # Private attempts isolate even an orphan Blender left by a killed worker.
+            frames = attempt_dir / 'frames'
             frames.mkdir(exist_ok=True)
-            for image in frames.glob('*.png'):
-                image.unlink()
             await run_process([binary, '--background', '--factory-startup', '--python-exit-code', '1',
                                '--python', Path(__file__).with_name('blender_scene.py'), '--', scenario_path],
-                              directory / 'blender.log', settings.BLENDER_TIMEOUT)
+                              attempt_dir / 'blender.log', settings.BLENDER_TIMEOUT)
         render_time = time.monotonic() - started
         if len(list(frames.glob('*.png'))) != segment.frame_count:
-            raise RuntimeError(f'Blender produced incomplete frames; see {directory / "blender.log"}')
-        temporary = directory / 'output.partial.mp4'
+            raise RuntimeError(f'Blender produced incomplete frames; see {attempt_dir / "blender.log"}')
+        temporary = attempt_dir / 'output.partial.mp4'
         ffmpeg_started = time.monotonic()
         await run_process([get_ffmpeg_binary(), '-y', '-framerate', scenario.fps, '-start_number', '1',
                            '-i', frames / '%06d.png', '-frames:v', segment.frame_count, '-an', '-c:v', 'libx264',
                            '-preset', 'fast', '-crf', '20', '-pix_fmt', 'yuv420p', '-movflags', '+faststart', temporary],
-                          directory / 'ffmpeg.log', settings.BLENDER_TIMEOUT)
+                          attempt_dir / 'ffmpeg.log', settings.BLENDER_TIMEOUT)
         from app.simulation.media import validate_media
         await validate_media(temporary, width, height, segment.frame_count / scenario.fps, scenario.fps)
         output = directory / 'output.mp4'
         temporary.replace(output)
         # Keep a representative image independently of optional frame cleanup.
         shutil.copyfile(frames / '000001.png', directory / 'preview.png')
+        for filename in ('blender.log','ffmpeg.log','scene.blend'):
+            shutil.copyfile(attempt_dir/filename,directory/filename)
         logger.info('segment=%s seed=%s duration=%.2f obstacles=%s blender_seconds=%.2f ffmpeg_seconds=%.2f',
                     segment.index, segment.seed, segment.frame_count / scenario.fps,
                     [s.type for s in segment.sections], render_time, time.monotonic() - ffmpeg_started)

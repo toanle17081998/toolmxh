@@ -6,6 +6,46 @@ from unittest.mock import AsyncMock, Mock, patch
 
 
 class SimulationVideoRequestTest(unittest.TestCase):
+    def test_regeneration_holds_ownership_even_if_earlier_running_probe_was_stale(self):
+        from app.web import server
+        from app.config import settings
+        from app.simulation.models import SimulationConfig, SegmentProgress
+        from app.simulation.service import prepare_simulation_project
+        from app.simulation.lock import ProjectLease
+        from fastapi import BackgroundTasks, HTTPException
+        async def check():
+            manager,state = prepare_simulation_project('race_test',SimulationConfig(duration=30,seed=3))
+            state.segments_progress[1] = SegmentProgress(segment_id=1,seed=3,duration=30,status='COMPLETED')
+            manager.save_state(state)
+            before = manager.state_file.read_text()
+            with ProjectLease(manager.project_dir), patch.object(server,'project_is_running',return_value=False):
+                with self.assertRaises(HTTPException) as failure:
+                    await server.regenerate_scene('race_test',1,BackgroundTasks())
+                self.assertEqual(failure.exception.status_code,409)
+                self.assertEqual(manager.state_file.read_text(),before)
+        with tempfile.TemporaryDirectory() as root, patch.object(settings,'PROJECTS_DIR',Path(root)):
+            asyncio.run(check())
+
+    def test_simulation_web_failure_does_not_overwrite_new_owner_state(self):
+        from app.web import server
+        from app.config import settings
+        from app.simulation.models import SimulationConfig
+        from app.simulation.service import prepare_simulation_project
+        from app.models.project import PipelineStage
+        async def check():
+            manager,state = prepare_simulation_project('failure_race',SimulationConfig(duration=30,seed=3))
+            state.stage=PipelineStage.SIMULATION_RENDERING
+            state.progress_message='New CLI owner is rendering'
+            manager.save_state(state)
+            service = Mock()
+            service.generate_video = AsyncMock(side_effect=RuntimeError('old web attempt failed'))
+            with patch.object(server,'SimulationVideoService',return_value=service):
+                await server.run_factory_task('failure_race',server.GenerateRequest(video_type='simulation_video',duration=30))
+            self.assertEqual(manager.load_state().stage,PipelineStage.SIMULATION_RENDERING)
+            self.assertEqual(manager.load_state().progress_message,'New CLI owner is rendering')
+        with tempfile.TemporaryDirectory() as root, patch.object(settings,'PROJECTS_DIR',Path(root)):
+            asyncio.run(check())
+
     def test_failed_atomic_state_replace_preserves_previous_json(self):
         from app.core.state_manager import ProjectStateManager
         from app.models.project import ProjectConfig

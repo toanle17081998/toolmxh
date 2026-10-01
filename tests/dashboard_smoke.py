@@ -31,6 +31,7 @@ def main():
         page.route('**/api/generate',capture)
         page.route('**/api/progress/browser_sim',lambda route:route.fulfill(status=200,json={
             'stage':'SIMULATION_RENDERING','progress_percentage':25,'progress_message':'Rendering 1/3',
+            'is_running':True,'task_info':{'status':'FAILED','error':'stale web attempt'},
             'config':{'video_type':'simulation_video'},'segments_progress':{'1':{'segment_id':1,'status':'RENDERING','duration':30}}}))
         page.click('#generateBtn')
         page.wait_for_function("document.getElementById('currentStatusText').textContent==='Rendering 1/3'")

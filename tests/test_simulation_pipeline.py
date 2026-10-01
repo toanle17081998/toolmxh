@@ -7,6 +7,37 @@ from unittest.mock import patch
 
 
 class BlenderRendererTest(unittest.IsolatedAsyncioTestCase):
+    async def test_retry_uses_private_workdir_and_does_not_touch_other_attempt_files(self):
+        import json
+        import sys
+        from PIL import Image
+        from app.simulation.models import SimulationConfig
+        from app.simulation.scenario import ScenarioGenerator
+        from app.simulation.blender_renderer import BlenderRenderer, run_process
+        scenario = ScenarioGenerator().generate(SimulationConfig(duration=1,seed=42))
+        segment = scenario.segments[0]
+        segment.frame_count=1
+        attempts=[]
+        async def render_boundary(command,log_path,timeout):
+            if '--background' not in command:
+                return await run_process(command,log_path,timeout)
+            payload=json.loads(Path(command[-1]).read_text())
+            work=Path(payload['output_dir'])
+            attempts.append(work)
+            Image.new('RGB',(160,90),'red').save(work/'frames'/'000001.png')
+            (work/'scene.blend').write_bytes(b'unit render boundary')
+            Path(log_path).write_text('test renderer log')
+        with tempfile.TemporaryDirectory() as directory:
+            renderer=BlenderRenderer(binary=sys.executable)
+            with patch('app.simulation.blender_renderer.run_process',side_effect=render_boundary):
+                await renderer.render_segment(scenario,segment,Path(directory),160,90)
+                sentinel=attempts[0]/'frames'/'orphan.png'
+                sentinel.write_bytes(b'an orphan still owns this attempt')
+                await renderer.render_segment(scenario,segment,Path(directory),160,90)
+            self.assertNotEqual(attempts[0],attempts[1])
+            self.assertTrue(sentinel.exists())
+            self.assertTrue((Path(directory)/'output.mp4').exists())
+
     async def test_missing_executable_is_explicit(self):
         from app.simulation.blender_renderer import BlenderRenderer
         with self.assertRaisesRegex(RuntimeError, 'BLENDER_PATH'):
@@ -99,7 +130,14 @@ class SimulationCompositionTest(unittest.IsolatedAsyncioTestCase):
                 wav.setparams((1, 2, 44100, 0, 'NONE', 'not compressed'))
                 wav.writeframes(b'\0\0' * 88200)
             final = root / 'final.mp4'
-            await VideoComposer().compose_simulation(segments, str(root/'mix.wav'), str(final), 2)
+            composition_attempts=[]
+            async def track_composition(command,log,timeout):
+                composition_attempts.append((command[-1],command[command.index('-i')+1],log))
+                await run_process(command,log,timeout)
+            with patch('app.simulation.blender_renderer.run_process',side_effect=track_composition):
+                await VideoComposer().compose_simulation(segments, str(root/'mix.wav'), str(final), 2)
+                await VideoComposer().compose_simulation(segments, str(root/'mix.wav'), str(final), 2)
+            self.assertNotEqual(composition_attempts[0],composition_attempts[1])
             result = await validate_media(final, 160, 90, 2, 30, require_audio=True)
             self.assertTrue(result['valid'])
             self.assertEqual(result['frames'], 60)

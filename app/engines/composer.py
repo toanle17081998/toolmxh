@@ -9,18 +9,23 @@ class VideoComposer:
 
     async def compose_simulation(self, segment_paths: List[str], audio_path: str,
                                  output_path: str, duration: float) -> str:
+        import uuid
+        import shutil
         from app.simulation.blender_renderer import run_process
         from app.config import settings
         out = Path(output_path).resolve()
         out.parent.mkdir(parents=True, exist_ok=True)
-        concat = out.parent / 'segments_concat.txt'
+        attempt = uuid.uuid4().hex
+        concat = out.parent / f'segments_concat.{attempt}.txt'
         concat.write_text(''.join("file '" + Path(p).resolve().as_posix().replace("'", "'\\''") + "'\n" for p in segment_paths), encoding='utf-8')
-        temporary = out.with_name(out.stem + '.partial.mp4')
+        temporary = out.with_name(out.stem + f'.{attempt}.partial.mp4')
+        attempt_log = out.parent / f'composition.{attempt}.log'
         await run_process([get_ffmpeg_binary(), '-y', '-f', 'concat', '-safe', '0', '-i', concat,
                            '-i', audio_path, '-map', '0:v:0', '-map', '1:a:0', '-c:v', 'copy',
                            '-c:a', 'aac', '-b:a', '192k', '-t', duration, '-movflags', '+faststart', temporary],
-                          out.parent / 'composition.log', settings.BLENDER_TIMEOUT)
+                          attempt_log, settings.BLENDER_TIMEOUT)
         temporary.replace(out)
+        shutil.copyfile(attempt_log,out.parent/'composition.log')
         return str(out)
 
     async def compose_video(
