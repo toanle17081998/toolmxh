@@ -47,53 +47,43 @@ class GeminiTTSProvider(TTSProvider):
         raw_bytes = None
         last_err = None
 
-        for m in models_to_try:
-            try:
-                res = self.client.models.generate_content(
-                    model=m,
-                    contents=text,
-                    config=types.GenerateContentConfig(
-                        response_modalities=["AUDIO"],
-                        speech_config=types.SpeechConfig(
-                            voice_config=types.VoiceConfig(
-                                prebuilt_voice_config=types.PrebuiltVoiceConfig(voice_name=gemini_voice)
-                            )
-                        )
-                    )
-                )
-                if res.candidates and res.candidates[0].content and res.candidates[0].content.parts:
-                    for part in res.candidates[0].content.parts:
-                        if hasattr(part, "inline_data") and part.inline_data:
-                            data = part.inline_data.data
-                            if isinstance(data, str):
-                                data = base64.b64decode(data)
-                            raw_bytes = data
-                            break
-                if raw_bytes:
-                    break
-            except Exception as e:
-                last_err = e
-                # Fallback thử với prompt trực tiếp nếu speech_config gặp lỗi
+        # Bắt buộc khóa chặt giọng đã chọn, thử tối đa 3 lần với cùng giọng đọc
+        for attempt in range(3):
+            for m in models_to_try:
                 try:
                     res = self.client.models.generate_content(
                         model=m,
-                        contents=f"Đọc to rõ ràng đoạn văn sau bằng tiếng Việt: {text}",
-                        config=types.GenerateContentConfig(response_modalities=["AUDIO"])
+                        contents=text,
+                        config=types.GenerateContentConfig(
+                            response_modalities=["AUDIO"],
+                            speech_config=types.SpeechConfig(
+                                voice_config=types.VoiceConfig(
+                                    prebuilt_voice_config=types.PrebuiltVoiceConfig(voice_name=gemini_voice)
+                                )
+                            )
+                        )
                     )
-                    for part in res.candidates[0].content.parts:
-                        if hasattr(part, "inline_data") and part.inline_data:
-                            data = part.inline_data.data
-                            if isinstance(data, str):
-                                data = base64.b64decode(data)
-                            raw_bytes = data
-                            break
+                    if res.candidates and res.candidates[0].content and res.candidates[0].content.parts:
+                        for part in res.candidates[0].content.parts:
+                            if hasattr(part, "inline_data") and part.inline_data:
+                                data = part.inline_data.data
+                                if isinstance(data, str):
+                                    data = base64.b64decode(data)
+                                raw_bytes = data
+                                break
                     if raw_bytes:
                         break
-                except Exception:
+                except Exception as e:
+                    last_err = e
                     continue
+            if raw_bytes:
+                break
+            # Nếu gặp sự cố tạm thời, nghỉ 1.5 giây và thử lại đúng giọng đó
+            import time
+            time.sleep(1.5)
 
         if not raw_bytes:
-            raise last_err or RuntimeError("Gemini TTS không trả về dữ liệu audio.")
+            raise last_err or RuntimeError(f"Gemini TTS không thể sinh âm thanh đồng bộ cho giọng {gemini_voice}.")
 
         with open(raw_pcm_path, "wb") as f:
             f.write(raw_bytes)

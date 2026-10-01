@@ -89,7 +89,9 @@ class TimelineEngine:
             "-f", "concat",
             "-safe", "0",
             "-i", str(concat_txt),
-            "-c", "copy",
+            "-af", "loudnorm=I=-16:TP=-1.5:LRA=9",
+            "-c:a", "pcm_s16le",
+            "-ar", "44100",
             str(output_path)
         ]
         proc = await asyncio.create_subprocess_exec(

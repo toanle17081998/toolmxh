@@ -42,23 +42,17 @@ class MasterTTSProvider(TTSProvider):
             except Exception as e:
                 logger.warning(f"VoiceStudio không khả dụng ({e}), chuyển sang Gemini/OpenAI...")
 
-        # 1. Ưu tiên Google Gemini Studio Neural Voice (Cực hay, trầm ấm/truyền cảm, âm thanh 24kHz -> 44.1kHz studio)
+        # 1. Ưu tiên Google Gemini Studio Neural Voice (Đồng bộ tuyệt đối 1 giọng từ đầu đến cuối)
         if gemini_key:
-            try:
-                if not self.gemini:
-                    self.gemini = GeminiTTSProvider(api_key=gemini_key)
-                return await self.gemini.synthesize_to_file(text, output_wav_path, voice=v, speed=speed)
-            except Exception as ge:
-                logger.warning(f"Gemini Neural TTS gặp lỗi ({ge}), chuyển sang OpenAI/Edge fallback...")
+            if not self.gemini:
+                self.gemini = GeminiTTSProvider(api_key=gemini_key)
+            return await self.gemini.synthesize_to_file(text, output_wav_path, voice=v, speed=speed)
 
-        # 2. Thử OpenAI TTS HD nếu có key và quota
+        # 2. Thử OpenAI TTS HD nếu người dùng chọn và có key
         if v in ["onyx", "nova", "shimmer", "alloy", "echo", "fable"] and openai_key:
-            try:
-                from app.providers.tts.openai import OpenAITTSProvider
-                openai_tts = OpenAITTSProvider(api_key=openai_key)
-                return await openai_tts.synthesize_to_file(text, output_wav_path, voice=v, speed=speed)
-            except Exception as e:
-                logger.warning(f"OpenAI TTS HD không khả dụng ({e}), tiếp tục fallback...")
+            from app.providers.tts.openai import OpenAITTSProvider
+            openai_tts = OpenAITTSProvider(api_key=openai_key)
+            return await openai_tts.synthesize_to_file(text, output_wav_path, voice=v, speed=speed)
 
         # 3. Ánh xạ giọng Edge-TTS Neural chuẩn truyền hình
         edge_voice = "vi-VN-NamMinhNeural" if "nam" in v or v == "onyx" else "vi-VN-HoaiMyNeural"
