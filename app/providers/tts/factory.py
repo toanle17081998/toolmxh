@@ -27,6 +27,16 @@ class MasterTTSProvider(TTSProvider):
         v = (voice or self.voice_preference or "onyx").lower()
         openai_key = os.getenv("OPENAI_API_KEY") or settings.OPENAI_API_KEY
 
+        # 0. Nếu người dùng chọn engine từ VoiceStudio (CosyVoice 2/3, Kokoro, F5-TTS)
+        if v in ["voicestudio", "cosyvoice", "kokoro", "f5tts"] or v.startswith("voicestudio:"):
+            try:
+                from app.providers.tts.voicestudio import VoiceStudioProvider
+                engine_name = v.split(":")[-1] if ":" in v else "cosyvoice"
+                vs_provider = VoiceStudioProvider()
+                return await vs_provider.synthesize_to_file(text, output_wav_path, voice=engine_name, speed=speed)
+            except Exception as e:
+                logger.warning(f"VoiceStudio không khả dụng ({e}), chuyển sang OpenAI/Edge/Google TTS...")
+
         # 1. Nếu người dùng chọn giọng OpenAI (onyx, nova, shimmer...) và có API key
         if v in ["onyx", "nova", "shimmer", "alloy", "echo", "fable"] and openai_key:
             try:
