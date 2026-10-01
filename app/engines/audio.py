@@ -20,21 +20,26 @@ class AudioEngine:
         out_p.parent.mkdir(parents=True, exist_ok=True)
         ffmpeg_bin = get_ffmpeg_binary()
 
-        # 1. Nếu chưa có file BGM, tự động tổng hợp đoạn ambient cinematic pad không bản quyền
-        effective_bgm = bgm_path
-        temp_bgm = None
+        # 1. Nếu không có BGM thực tế, giữ nguyên giọng đọc thuyết minh Studio trong trẻo (không chèn sóng sin rè)
         if not effective_bgm or not Path(effective_bgm).exists():
-            temp_bgm = out_p.parent / "procedural_ambient_bgm.wav"
-            self._generate_ambient_drone(str(temp_bgm), total_duration)
-            effective_bgm = str(temp_bgm)
+            cmd = [
+                ffmpeg_bin, "-y",
+                "-i", str(narration_wav_path),
+                "-af", "highpass=f=60,loudnorm=I=-16:TP=-1.5:LRA=9",
+                "-c:a", "pcm_s16le",
+                "-ar", "44100",
+                str(out_p)
+            ]
+            proc = await asyncio.create_subprocess_exec(*cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            await proc.wait()
+            return str(out_p)
 
-        # 2. Sử dụng FFmpeg amix và volume ducking
-        # Giọng đọc ở 1.0, BGM ở 0.15 với fade out 2 giây cuối
+        # 2. Nếu có file BGM thật, hòa âm êm ái tự nhiên (không dùng dropout_transition gây tiếng rè tivi)
         fade_start = max(0.0, total_duration - 2.0)
         filter_complex = (
-            f"[1:a]volume=0.15,afade=t=out:st={fade_start:.2f}:d=2.0[bgm];"
+            f"[1:a]volume=0.10,afade=t=in:ss=0:d=1.0,afade=t=out:st={fade_start:.2f}:d=2.0[bgm];"
             f"[0:a]volume=1.0[voice];"
-            f"[voice][bgm]amix=inputs=2:duration=first:dropout_transition=2[aout]"
+            f"[voice][bgm]amix=inputs=2:duration=first:dropout_transition=0[aout]"
         )
 
         cmd = [
@@ -54,9 +59,7 @@ class AudioEngine:
             stderr=subprocess.DEVNULL
         )
         await proc.wait()
-
-        if temp_bgm and temp_bgm.exists():
-            temp_bgm.unlink()
+        return str(out_p)
 
         return str(out_p)
 

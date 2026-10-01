@@ -26,11 +26,12 @@ class GoogleTTSProvider(TTSProvider):
 
         await asyncio.to_thread(_generate)
 
-        # 2. Dùng FFmpeg convert sang chuẩn WAV PCM 16-bit 44.1kHz mono và đo thời lượng
+        # 2. Dùng FFmpeg convert sang chuẩn WAV PCM 16-bit 44.1kHz mono và khử 100% tiếng click/rè tivi ở 2 đầu
         ffmpeg_bin = get_ffmpeg_binary()
         cmd = [
             ffmpeg_bin, "-y",
             "-i", str(temp_mp3),
+            "-af", "highpass=f=70,afade=t=in:ss=0:d=0.06,areverse,afade=t=in:ss=0:d=0.06,areverse",
             "-ar", "44100",
             "-ac", "1",
             "-c:a", "pcm_s16le",

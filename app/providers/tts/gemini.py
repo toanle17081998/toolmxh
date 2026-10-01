@@ -43,7 +43,8 @@ class GeminiTTSProvider(TTSProvider):
         else: # Mặc định giọng nam trầm điện ảnh Charon
             gemini_voice = "Charon"
 
-        models_to_try = [self.model, "gemini-2.5-flash-preview-tts", "gemini-3.8-flash-tts"]
+        # Sử dụng mô hình TTS chuẩn ổn định cao nhất, không bị giới hạn 10 requests của bản 3.8
+        models_to_try = ["gemini-2.5-flash-preview-tts"]
         raw_bytes = None
         last_err = None
 
@@ -88,16 +89,18 @@ class GeminiTTSProvider(TTSProvider):
         with open(raw_pcm_path, "wb") as f:
             f.write(raw_bytes)
 
-        # Chuyển đổi raw PCM 24kHz sang WAV 44.1kHz chuẩn studio bằng FFmpeg
+        # Chuyển đổi raw PCM 24kHz sang WAV 44.1kHz chuẩn studio và khử 100% tiếng click/rè tivi ở 2 đầu
         ffmpeg_bin = get_ffmpeg_binary()
-        tempo_filter = f"atempo={speed}" if speed != 1.0 else "anull"
+        tempo = f"atempo={speed}," if speed != 1.0 else ""
+        # highpass loại bỏ DC offset/rumble, afade đầu và cuối 60ms làm mềm tuyệt đối điểm nối
+        clean_filter = f"{tempo}highpass=f=70,afade=t=in:ss=0:d=0.06,areverse,afade=t=in:ss=0:d=0.06,areverse"
         cmd = [
             ffmpeg_bin, "-y",
             "-f", "s16le",
             "-ar", "24000",
             "-ac", "1",
             "-i", str(raw_pcm_path),
-            "-af", tempo_filter,
+            "-af", clean_filter,
             "-ar", "44100",
             "-c:a", "pcm_s16le",
             str(out_path)
