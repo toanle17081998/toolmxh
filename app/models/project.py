@@ -4,10 +4,17 @@ from typing import Optional, Dict, Any, List
 from pydantic import BaseModel, Field
 from datetime import datetime
 from app.simulation.models import SimulationConfig, SegmentProgress
+from app.health.models import VisualMode
 
 class VideoType(str, Enum):
     SHORT_CONTENT = 'short_content'
-    SIMULATION_VIDEO = 'simulation_video'
+    PHYSICS_SIMULATION_VIDEO = 'physics_simulation_video'
+    SIMULATION_VIDEO = 'physics_simulation_video'
+
+    @classmethod
+    def _missing_(cls, value):
+        if isinstance(value, str) and value.lower() in ('simulation_video', 'physics_simulation_video'):
+            return cls.PHYSICS_SIMULATION_VIDEO
 
 class PipelineStage(str, Enum):
     CREATED = "CREATED"
@@ -54,6 +61,7 @@ class ProjectConfig(BaseModel):
     target_duration: int = 60
     language: str = "vi"
     style: str = "Cinematic Documentary"
+    visual_mode: VisualMode = VisualMode.AUTO
     llm_model: str = "gemini-3.8-flash"
     image_model: str = "real_media"
     video_model: str = "cinematic"  # cinematic, veo-3.1-generate-preview, comfyui

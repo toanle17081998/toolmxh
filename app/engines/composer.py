@@ -1,5 +1,3 @@
-import asyncio
-import subprocess
 from pathlib import Path
 from typing import List
 from app.config import get_ffmpeg_binary
@@ -42,12 +40,16 @@ class VideoComposer:
         out_p = Path(output_mp4_path)
         out_p.parent.mkdir(parents=True, exist_ok=True)
         ffmpeg_bin = get_ffmpeg_binary()
+        import uuid
+        attempt = uuid.uuid4().hex
+        temporary = out_p.with_name(out_p.stem+f'.{attempt}.partial.mp4')
 
         # 1. Tạo file concat danh sách scene video
-        concat_txt = out_p.parent / "scenes_concat.txt"
+        concat_txt = out_p.parent / f"scenes_concat.{attempt}.txt"
         with open(concat_txt, "w", encoding="utf-8") as f:
             for vp in scene_video_paths:
-                f.write(f"file '{Path(vp).resolve().as_posix()}'\n")
+                escaped = Path(vp).resolve().as_posix().replace("'", "'\\''")
+                f.write(f"file '{escaped}'\n")
 
         # 2. Xử lý đường dẫn subtitle cho FFmpeg filter trên Windows
         # Trong FFmpeg filter, dấu hai chấm và dấu xuyệt ngược cần được escape
@@ -84,20 +86,19 @@ class VideoComposer:
             "-b:a", "192k",
             "-shortest",
             "-pix_fmt", "yuv420p",
-            str(out_p)
+            str(temporary)
         ]
 
-        proc = await asyncio.create_subprocess_exec(
-            *cmd,
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL
-        )
-        await proc.wait()
-
-        if concat_txt.exists():
-            concat_txt.unlink()
-
-        if not out_p.exists():
-            raise RuntimeError(f"FFmpeg render master video failed: {output_mp4_path}")
-
+        from app.simulation.blender_renderer import run_process
+        from app.config import settings
+        from app.qc.validator import QualityControlValidator
+        try:
+            await run_process(cmd,out_p.parent/f'composition.{attempt}.log',settings.BLENDER_TIMEOUT)
+            qc = await QualityControlValidator.validate_video(str(temporary),width,height)
+            if not qc['valid']:
+                raise RuntimeError(f'FFmpeg master output failed validation: {qc}')
+            temporary.replace(out_p)
+        finally:
+            if concat_txt.exists():
+                concat_txt.unlink()
         return str(out_p)

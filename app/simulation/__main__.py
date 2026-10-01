@@ -15,13 +15,17 @@ def main():
     parser.add_argument('--duration', type=int, default=60)
     parser.add_argument('--seed', type=int, default=None)
     parser.add_argument('--aspect-ratio', choices=['16:9','9:16'], default='16:9')
-    parser.add_argument('--quality', choices=['draft','standard','high'], default='standard')
+    parser.add_argument('--quality', choices=['preview','draft','standard','high'], default='preview')
     parser.add_argument('--fps', type=int, choices=[24,30], default=30)
     parser.add_argument('--segment-seconds', type=int, default=30)
     parser.add_argument('--blender-path', default=None)
     parser.add_argument('--project-id', default=None)
     parser.add_argument('--resume', action='store_true')
     parser.add_argument('--keep-scenes', action='store_true')
+    parser.add_argument('--content-type',default='obstacle_course',help='Content family or auto; see /api/simulation/catalog')
+    parser.add_argument('--idea-id',default=None)
+    parser.add_argument('--trials',type=int,default=3)
+    parser.add_argument('--hide-labels',action='store_true')
     args = parser.parse_args()
     if args.resume and not args.project_id:
         parser.error('--resume requires --project-id')
@@ -38,7 +42,9 @@ def main():
     else:
         config = SimulationConfig(duration=6 if args.smoke else args.duration, seed=args.seed,
                                   aspect_ratio=args.aspect_ratio, quality='draft' if args.smoke else args.quality,
-                                  fps=args.fps, segment_seconds=3 if args.smoke else args.segment_seconds)
+                                  fps=args.fps, segment_seconds=3 if args.smoke else args.segment_seconds,
+                                  content_type=args.content_type,idea_id=args.idea_id,trial_count=args.trials,
+                                  show_labels=not args.hide_labels)
     result = asyncio.run(SimulationVideoService().generate_video(project_id,config))
     print(json.dumps(result,indent=2))
 

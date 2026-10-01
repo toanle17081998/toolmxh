@@ -7,13 +7,14 @@ from fastapi import FastAPI, BackgroundTasks, HTTPException
 from fastapi.responses import HTMLResponse, FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel, field_validator, model_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
 
 from app.config import settings
 from app.factory import VietnameseVideoFactory
 from app.core.state_manager import ProjectStateManager
 from app.core.topic_suggester import TopicExplorerService
 from app.models.project import ProjectConfig, PipelineStage, SceneStatus, VideoType
+from app.health.models import VisualMode
 from app.simulation.models import SimulationConfig
 from app.simulation.service import SimulationVideoService, prepare_simulation_project
 from app.simulation.lock import ProjectBusy, ProjectLease, project_is_running
@@ -39,6 +40,7 @@ class GenerateRequest(BaseModel):
     duration: int = 60
     platform: str = "tiktok"
     style: str = "Cinematic Documentary"
+    visual_mode: VisualMode = VisualMode.AUTO
     llm_model: str = "gemini-3.8-flash"
     image_model: str = "auto"
     video_model: str = "wan2.1"
@@ -46,17 +48,23 @@ class GenerateRequest(BaseModel):
     mascot: Optional[str] = "dr_bear"
     gemini_key: Optional[str] = None
     openai_key: Optional[str] = None
-    simulation_type: str = 'vehicle_obstacle'
+    simulation_type: str = 'brick_vehicle_obstacle'
     aspect_ratio: Optional[str] = None
-    quality: str = 'standard'
+    quality: str = 'preview'
     seed: Optional[int] = None
-    vehicle: str = 'brick_basic_car'
-    color: str = 'random'
-    theme: str = 'colorful_toy_world'
-    difficulty: int = 2
-    music: bool = True
+    vehicle: str = 'brick_crawler'
+    color: str = 'red'
+    theme: str = 'minimal_gray_track'
+    difficulty: int | str = 2
+    music: bool = False
     sound_effects: bool = True
     engine_sound: bool = True
+    sound: Optional[str] = None
+    camera_style: str = 'dynamic_follow'
+    content_type: str = 'obstacle_course'
+    idea_id: Optional[str] = None
+    trial_count: int = 3
+    show_labels: bool = True
 
     @field_validator('video_type', mode='before')
     @classmethod
@@ -68,14 +76,16 @@ class GenerateRequest(BaseModel):
         return SimulationConfig(simulation_type=self.simulation_type,duration=self.duration,aspect_ratio=aspect,
                                 quality=self.quality,seed=self.seed,vehicle=self.vehicle,color=self.color,
                                 theme=self.theme,difficulty=self.difficulty,music=self.music,
-                                sound_effects=self.sound_effects,engine_sound=self.engine_sound)
+                                sound_effects=self.sound_effects,engine_sound=self.engine_sound,
+                                sound=self.sound,camera_style=self.camera_style,content_type=self.content_type,
+                                idea_id=self.idea_id,trial_count=self.trial_count,show_labels=self.show_labels)
 
     @model_validator(mode='after')
     def validate_mode(self):
         if self.video_type == VideoType.SIMULATION_VIDEO:
             self.simulation_config()
-            if not 30 <= self.duration <= 180:
-                raise ValueError('Simulation MVP supports 30–180 seconds; longer durations are not yet enabled')
+            if not 20 <= self.duration <= 1800:
+                raise ValueError('Physics simulation supports 20–1800 seconds')
         elif not self.topic.strip():
             raise ValueError('Short Content requires a topic')
         return self
@@ -87,6 +97,32 @@ class SettingsUpdateRequest(BaseModel):
     openai_api_key: Optional[str] = None
     pexels_api_key: Optional[str] = None
     comfyui_server_url: Optional[str] = None
+
+
+class SimulationIdeaRequest(BaseModel):
+    seed: Optional[int] = Field(default=None,ge=0,le=2**32-1)
+    content_type: str = 'auto'
+    count: int = Field(default=3,ge=1,le=12)
+    history: list[str] = Field(default_factory=list,max_length=100)
+    include_planned: bool = False
+
+
+@app.get('/api/simulation/catalog')
+async def simulation_catalog():
+    from app.simulation.content import FAMILIES
+    return {'families':[family.public() for family in FAMILIES],'default':'auto'}
+
+
+@app.post('/api/simulation/ideas')
+async def simulation_ideas(req: SimulationIdeaRequest):
+    import secrets
+    from app.simulation.content import SimulationIdeaGenerator
+    seed = req.seed if req.seed is not None else secrets.randbits(32)
+    try:
+        ideas = SimulationIdeaGenerator().generate(seed,req.content_type,req.count,req.history,req.include_planned)
+    except ValueError as error:
+        raise HTTPException(status_code=422,detail=str(error)) from error
+    return {'seed':seed,'ideas':ideas}
 
 # Task background runner
 active_projects: Dict[str, Any] = {}
@@ -106,7 +142,8 @@ async def run_factory_task(project_id: str, req: GenerateRequest):
             llm_model=req.llm_model,
             image_model=req.image_model,
             video_model=req.video_model,
-            mascot=req.mascot or "auto"
+            mascot=req.mascot or "auto",
+            visual_mode=req.visual_mode
         )
         res = await factory.generate_video(
             topic=req.topic,
@@ -202,6 +239,7 @@ async def regenerate_scene(project_id: str, scene_id: int, background_tasks: Bac
         duration=state.config.target_duration,
         platform=state.config.platform,
         style=state.config.style,
+        visual_mode=state.config.visual_mode,
         llm_model=getattr(state.config, "llm_model", "gemini-3.8-flash"),
         image_model=getattr(state.config, "image_model", "gemini-3-pro-image-preview"),
         video_model=getattr(state.config, "video_model", "cinematic"),
@@ -354,7 +392,7 @@ async def get_project_video(project_id: str):
 # Endpoint tải file artifact
 @app.get("/media/{project_id}/artifact/{filename}")
 async def get_artifact(project_id: str, filename: str):
-    allowed = ["final.mp4", "thumbnail.png", "script.txt", "subtitle.srt", "metadata.json", "scenario.json"]
+    allowed = ["final.mp4", "thumbnail.png", "script.txt", "subtitle.srt", "metadata.json", "scenario.json", "experiment_results.json"]
     if filename not in allowed:
         raise HTTPException(status_code=403, detail="File không được phép truy cập")
     p = settings.OUTPUTS_DIR / project_id / filename

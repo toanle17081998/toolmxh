@@ -1,5 +1,7 @@
 # Simulation / Satisfying Video
 
+> Historical pre-refactor documentation. The current physics engine, configuration, samples and limitations are documented in [PHYSICS_SIMULATION_VIDEO.md](PHYSICS_SIMULATION_VIDEO.md). The animated traversal descriptions below do not describe the active pipeline.
+
 The app has two independent pipelines. `short_content` remains the default and uses the original Vietnamese script, TTS, subtitles and visual providers. `simulation_video` uses original Blender geometry, deterministic animation, procedural audio and FFmpeg. It does not construct the short-content factory or call AI/TTS services.
 
 ## MVP and limitations

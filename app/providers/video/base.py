@@ -3,6 +3,11 @@ from abc import ABC, abstractmethod
 class GenerativeVideoProvider(ABC):
     """Lớp trừu tượng cho công cụ sinh video AI (T2V & I2V)."""
 
+    supports_health_animation = False
+
+    async def generate_health_video(self, **kwargs):
+        raise RuntimeError(f"{type(self).__name__} cannot animate biological actions; configure Veo or Wan with a working generation API")
+
     @abstractmethod
     async def generate_image_to_video(
         self,

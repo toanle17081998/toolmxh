@@ -18,6 +18,11 @@ class WanVideoProvider(GenerativeVideoProvider):
     Tích hợp qua Fal.ai, Replicate API, hoặc Local ComfyUI.
     """
 
+    supports_health_animation = True
+
+    async def generate_health_video(self, **kwargs):
+        return await self.generate_image_to_video(**kwargs, allow_fallback=False)
+
     def __init__(
         self,
         model_size: str = "1.3b",  # "1.3b" hoặc "14b"
@@ -47,7 +52,8 @@ class WanVideoProvider(GenerativeVideoProvider):
         duration_seconds: float,
         width: int = 1080,
         height: int = 1920,
-        seed: int = -1
+        seed: int = -1,
+        allow_fallback: bool = True
     ) -> str:
         """Sinh video từ ảnh tham chiếu (Image-to-Video) bằng Wan2.1."""
         aspect_ratio = "9:16" if height >= width else "16:9"
@@ -101,6 +107,9 @@ class WanVideoProvider(GenerativeVideoProvider):
                     return output_path
             except Exception as e:
                 logger.warning(f"Wan2.1 Replicate I2V lỗi: {e}")
+
+        if not allow_fallback:
+            raise RuntimeError("Wan health animation unavailable; FAL_KEY/REPLICATE_API_TOKEN and a working I2V model are required. Still-image motion fallback is prohibited.")
 
         # 3. Fallback sang Semantic Cinematic Motion Engine (100% bám sát ảnh AI theo kịch bản)
         from app.providers.video.semantic_engine import SemanticMotionVideoEngine

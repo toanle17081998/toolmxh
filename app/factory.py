@@ -21,6 +21,10 @@ from app.engines.subtitle import SubtitleEngine
 from app.engines.audio import AudioEngine
 from app.engines.composer import VideoComposer
 from app.qc.validator import QualityControlValidator
+from app.health.models import VisualMode
+from app.health.registry import resolve_visual_mode
+from app.health.planner import HealthVisualPlanner
+from app.health.generation import HealthVisualGenerator
 
 import sys
 if sys.platform == "win32":
@@ -44,7 +48,8 @@ class VietnameseVideoFactory:
         llm_model: Optional[str] = None,
         image_model: Optional[str] = None,
         video_model: str = "wan2.1",
-        mascot: str = "dr_bear"
+        mascot: str = "dr_bear",
+        visual_mode: str = "AUTO"
     ):
         self.console_output = console_output
         self.voice = voice or "namminh"
@@ -52,6 +57,7 @@ class VietnameseVideoFactory:
         self.image_model = image_model or "auto"
         self.video_model = video_model or "wan2.1"
         self.mascot = mascot or "dr_bear"
+        self.visual_mode = VisualMode(visual_mode)
 
         # Thiết lập key nếu được truyền vào
         if gemini_key:
@@ -96,7 +102,8 @@ class VietnameseVideoFactory:
             llm_model=self.llm_model,
             image_model=self.image_model,
             video_model=self.video_model,
-            voice=self.voice
+            voice=self.voice,
+            visual_mode=self.visual_mode
         )
 
         state_mgr = ProjectStateManager(p_id)
@@ -123,49 +130,77 @@ class VietnameseVideoFactory:
         mascot_profile = get_mascot(mascot_id=self.mascot, topic=topic)
         config.mascot = mascot_profile.id
         self.log(f"Linh vật hoạt hình 3D dẫn chuyện: {mascot_profile.name} ({mascot_profile.role_title})", style="bold magenta")
+        script_path = p_dir/'script'/'script.json'
+        reuse_script = script_path.exists()
 
         # 1. RESEARCH
         state_mgr.update_stage(PipelineStage.RESEARCH, 5.0)
         self.log(f"Đang nghiên cứu chủ đề bằng não bộ {self.llm.__class__.__name__}...")
-        try:
-            research_data = await self.llm.research_topic(topic)
-        except Exception as e:
-            self.log(f"LLM gặp sự cố ({e}), tự động chuyển sang mô hình dự phòng...", style="bold yellow")
-            self.llm = _get_fallback_llm(self.llm)
-            research_data = await self.llm.research_topic(topic)
-        with open(p_dir / "research" / "research.json", "w", encoding="utf-8") as f:
-            json.dump(research_data, f, ensure_ascii=False, indent=2)
+        if not reuse_script:
+            try:
+                research_data = await self.llm.research_topic(topic)
+            except Exception as e:
+                self.log(f"LLM gặp sự cố ({e}), tự động chuyển sang mô hình dự phòng...", style="bold yellow")
+                self.llm = _get_fallback_llm(self.llm)
+                research_data = await self.llm.research_topic(topic)
+            with open(p_dir / "research" / "research.json", "w", encoding="utf-8") as f:
+                json.dump(research_data, f, ensure_ascii=False, indent=2)
 
         # 2. SCRIPT
         state_mgr.update_stage(PipelineStage.SCRIPT, 15.0)
         self.log(f"Đang xây dựng kịch bản hoạt hình với {mascot_profile.name} bằng {self.llm.__class__.__name__}...")
-        try:
-            script = await self.llm.generate_script(topic, duration, platform, language, mascot_id=mascot_profile.id)
-        except Exception as e:
-            self.log(f"LLM gặp sự cố ({e}), tự động chuyển sang mô hình dự phòng...", style="bold yellow")
-            self.llm = _get_fallback_llm(self.llm)
-            script = await self.llm.generate_script(topic, duration, platform, language, mascot_id=mascot_profile.id)
+        if reuse_script:
+            script = StructuredScript.model_validate_json(script_path.read_text(encoding='utf-8'))
+            self.log('Giữ nguyên kịch bản đã lưu khi resume/regenerate cảnh.',style='dim')
+        else:
+            try:
+                script = await self.llm.generate_script(topic, duration, platform, language, mascot_id=mascot_profile.id)
+            except Exception as e:
+                self.log(f"LLM gặp sự cố ({e}), tự động chuyển sang mô hình dự phòng...", style="bold yellow")
+                self.llm = _get_fallback_llm(self.llm)
+                script = await self.llm.generate_script(topic, duration, platform, language, mascot_id=mascot_profile.id)
 
         # Đảm bảo cảnh cuối luôn có đoạn Outro Call-To-Action (CTA) mời theo dõi kênh
-        if script.scenes:
+        if script.scenes and not reuse_script:
             last_scene = script.scenes[-1]
             cta_keywords = ["theo dõi", "đăng ký", "follow", "subscribe", "bấm like", "thả tim"]
             if not any(k in last_scene.narration.lower() for k in cta_keywords):
                 last_scene.narration += f" Đừng quên bấm like và theo dõi để cùng {mascot_profile.name} chăm sóc sức khỏe mỗi ngày nhé!"
 
-        with open(p_dir / "script" / "script.json", "w", encoding="utf-8") as f:
-            f.write(script.model_dump_json(indent=2))
+        if not reuse_script:
+            with open(script_path, "w", encoding="utf-8") as f:
+                f.write(script.model_dump_json(indent=2))
         self.log(f"Kịch bản hoạt hình đã hoàn thành: '{script.title}' ({len(script.scenes)} scenes)", style="green")
 
         # 3. STORYBOARD
         state_mgr.update_stage(PipelineStage.STORYBOARD, 25.0)
         self.log(f"Đang chuyển đổi thành Storyboard 3D hoạt hình với {mascot_profile.name}...")
-        try:
-            storyboard = await self.llm.generate_storyboard(script, mascot_id=mascot_profile.id)
-        except Exception as e:
-            self.log(f"LLM gặp sự cố ({e}), tự động chuyển sang mô hình dự phòng...", style="bold yellow")
-            self.llm = _get_fallback_llm(self.llm)
-            storyboard = await self.llm.generate_storyboard(script, mascot_id=mascot_profile.id)
+        mode = resolve_visual_mode(topic + "\n" + script.title, self.visual_mode)
+        current_state = state_mgr.load_state()
+        current_state.config.visual_mode = mode
+        state_mgr.save_state(current_state)
+        health_generator = None
+        health_plans = {}
+        health_bible = None
+        width, height = settings.PLATFORM_RESOLUTIONS.get(platform, (1080, 1920))
+        if mode == VisualMode.HEALTH_CHARACTER:
+            self.log("HEALTH_CHARACTER: phân tích lời thoại, cơ quan và diễn biến sinh học trước khi sinh visual...")
+            health_generator = HealthVisualGenerator(self.llm, self.image_gen, self.video_gen, self.image_model)
+            health_generator.preflight()
+            invalidated = [scene_id for scene_id,progress in current_state.scenes_progress.items()
+                           if progress.status in (SceneStatus.PENDING,SceneStatus.FAILED)]
+            storyboard, health_bible, health_plans = await HealthVisualPlanner(self.llm).plan(script, p_dir,invalidated_scene_ids=invalidated)
+            state_mgr.update_stage(PipelineStage.CHARACTER_GENERATION, 30.0)
+            await health_generator.generate_references(health_bible, p_dir, width, height)
+            for scene in storyboard.scenes:
+                scene.continuity_reference = health_bible.characters[health_plans[scene.scene_id].analysis.primary_subject].reference_image
+        else:
+            try:
+                storyboard = await self.llm.generate_storyboard(script, mascot_id=mascot_profile.id)
+            except Exception as e:
+                self.log(f"LLM gặp sự cố ({e}), tự động chuyển sang mô hình dự phòng...", style="bold yellow")
+                self.llm = _get_fallback_llm(self.llm)
+                storyboard = await self.llm.generate_storyboard(script, mascot_id=mascot_profile.id)
         with open(p_dir / "storyboard" / "storyboard.json", "w", encoding="utf-8") as f:
             f.write(storyboard.model_dump_json(indent=2))
 
@@ -194,7 +229,8 @@ class VietnameseVideoFactory:
         table.add_column("Duration", justify="center")
         table.add_column("Status", style="magenta")
 
-        for s_idx, scene_timing in enumerate(timeline.scenes, 1):
+        for scene_timing in timeline.scenes:
+            s_idx = scene_timing.scene_id
             scene_dir = state_mgr.get_scene_dir(s_idx)
             img_path = scene_dir / "reference.png"
             vid_path = scene_dir / "video.mp4"
@@ -202,8 +238,20 @@ class VietnameseVideoFactory:
 
             # Tìm storyboard tương ứng
             sb_scene = next((s for s in storyboard.scenes if s.scene_id == s_idx), None)
-            img_prompt = sb_scene.image_prompt if sb_scene else f"Cinematic shot of {scene_timing.narration}"
-            vid_prompt = sb_scene.video_prompt if sb_scene else "Cinematic camera slow zoom in"
+            script_scene = next(s for s in script.scenes if s.id == s_idx)
+            img_prompt = sb_scene.image_prompt if sb_scene else f"Cinematic shot of {script_scene.narration}"
+            motion_prompt = sb_scene.video_prompt if sb_scene else "Cinematic camera slow zoom in"
+            vid_prompt = f"{img_prompt}. Motion: {motion_prompt}"
+
+            health_fingerprint = None
+            previous_fingerprint = None
+            if health_generator:
+                vid_prompt = sb_scene.video_prompt
+                health_fingerprint = health_generator.fingerprint(script_scene.narration,health_plans[s_idx],health_bible,
+                                                                  duration=scene_timing.duration,width=width,height=height)
+                if prompt_file.exists():
+                    with open(prompt_file, encoding="utf-8") as f:
+                        previous_fingerprint = json.load(f).get("health_fingerprint")
 
             # Lưu prompt metadata
             with open(prompt_file, "w", encoding="utf-8") as f:
@@ -211,14 +259,32 @@ class VietnameseVideoFactory:
                     "scene_id": s_idx,
                     "image_prompt": img_prompt,
                     "video_prompt": vid_prompt,
+                    "visual_mode": mode.value,
+                    "health_fingerprint": health_fingerprint,
                     "duration": scene_timing.duration
                 }, f, ensure_ascii=False, indent=2)
 
             # Kiểm tra cache / resume
-            if state_mgr.is_scene_completed(s_idx):
+            if state_mgr.is_scene_completed(s_idx) and (not health_generator or previous_fingerprint == health_fingerprint):
                 self.log(f"Scene {s_idx:02d}/{len(timeline.scenes):02d}: Đã hoàn thành từ trước [Bỏ qua/Resume]", style="dim")
                 scene_video_paths.append(str(vid_path))
                 table.add_row(f"{s_idx}", f"{scene_timing.duration:.1f}s", "[green]CACHED ✓[/green]")
+                continue
+
+            if health_generator:
+                state_mgr.update_scene_status(s_idx, SceneStatus.GENERATING_IMAGE)
+                try:
+                    await health_generator.generate_scene(
+                        script_scene.narration, health_plans[s_idx], health_bible,
+                        scene_dir, p_dir, scene_timing.duration, width, height,
+                    )
+                except Exception as error:
+                    state_mgr.update_scene_status(s_idx, SceneStatus.FAILED, error_message=str(error))
+                    raise
+                state_mgr.update_scene_status(s_idx, SceneStatus.VIDEO_DONE, image_path=str(img_path),
+                                              video_path=str(vid_path), duration=scene_timing.duration)
+                scene_video_paths.append(str(vid_path))
+                table.add_row(f"{s_idx}", f"{scene_timing.duration:.1f}s", "[green]HEALTH VERIFIED ✓[/green]")
                 continue
 
             # Bước A: AI Sinh ảnh tĩnh tham chiếu (T2I)
@@ -311,6 +377,10 @@ class VietnameseVideoFactory:
             burn_subtitles=True,
             total_duration=timeline.total_duration
         )
+        state_mgr.update_stage(PipelineStage.QC,95.0)
+        qc_result = await QualityControlValidator.validate_video(str(master_mp4),width,height)
+        if not qc_result['valid']:
+            raise RuntimeError(f'Master video failed quality control: {qc_result}')
         # Tạo bản sao output trực tiếp cho platform
         # Tạo các bản sao artifact hoàn thiện theo đúng chuẩn đặc tả
         import shutil
@@ -344,11 +414,7 @@ class VietnameseVideoFactory:
         with open(out_root_dir / "metadata.json", "w", encoding="utf-8") as f:
             json.dump(metadata, f, ensure_ascii=False, indent=2)
 
-        # 10. QUALITY CONTROL
-        state_mgr.update_stage(PipelineStage.QC, 95.0)
-        self.log("Đang kiểm định chất lượng video xuất xưởng (QC Validator)...")
-        qc_result = await QualityControlValidator.validate_video(str(final_mp4), width, height)
-
+        # Master QC has passed before exporting; now mark the project complete.
         state_mgr.update_stage(PipelineStage.COMPLETED, 100.0)
         self.log(f"HOÀN THÀNH XUẤT SẮC! File video sẵn sàng: {final_mp4}", style="bold green")
 

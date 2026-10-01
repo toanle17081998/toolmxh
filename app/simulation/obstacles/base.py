@@ -15,7 +15,7 @@ class BaseObstacle(ABC):
     def configurePhysics(self):
         from app.simulation.geometry import rigid_body
         for obj in self.objects:
-            rigid_body(obj, animated=True)
+            rigid_body(obj)
 
     def configureAnimation(self, frame, time):
         """Static obstacles require no animated transforms."""

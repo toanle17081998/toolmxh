@@ -1,5 +1,7 @@
 # Simulation Video Implementation Plan
 
+> Superseded by [PHYSICS_SIMULATION_REFACTOR_PLAN.md](PHYSICS_SIMULATION_REFACTOR_PLAN.md); preserved as the audit record of the prior animated traversal design.
+
 > Execution: implement in this session, in the existing checkout. The user's supplied specification authorizes the complete MVP after this plan is written. Preserve the existing short-content pipeline.
 
 **Goal:** Produce real, downloadable Blender-rendered toy obstacle videos without narration, subtitles, or AI service dependencies.

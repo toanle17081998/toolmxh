@@ -43,14 +43,26 @@ class BlenderRenderer:
             raise RuntimeError('Blender executable not found. Set BLENDER_PATH to an installed Blender 4.5 executable.')
         return binary
 
+    def fingerprint(self, scenario, experiment_id=None):
+        from app.simulation.fingerprint import physics_fingerprint
+        return physics_fingerprint(scenario,self.check_available(),experiment_id)
+
+    def render_fingerprint(self,scenario,segment,width,height):
+        from app.simulation.fingerprint import render_fingerprint
+        return render_fingerprint(self.fingerprint(scenario,segment.experiment_id),scenario,segment,width,height,settings.BLENDER_RENDER_ENGINE)
+
     async def render_segment(self, scenario, segment, directory, width, height):
         binary = self.check_available()
         directory = Path(directory).resolve()
         directory.mkdir(parents=True, exist_ok=True)
         attempt_dir = directory/'attempts'/uuid.uuid4().hex
         attempt_dir.mkdir(parents=True)
+        fingerprint = self.fingerprint(scenario,segment.experiment_id)
         payload = {'scenario': scenario.model_dump(), 'segment': segment.model_dump(), 'width': width, 'height': height,
+                   'fingerprint':fingerprint,
                    'engine': settings.BLENDER_RENDER_ENGINE, 'output_dir': str(attempt_dir)}
+        if segment.experiment_id is not None:
+            payload['experiment'] = next(trial.model_dump() for trial in scenario.experiments if trial.id==segment.experiment_id)
         scenario_path = attempt_dir / 'scenario.json'
         scenario_path.write_text(json.dumps(payload, indent=2), encoding='utf-8')
         shutil.copyfile(scenario_path,directory/'scenario.json')
@@ -62,9 +74,31 @@ class BlenderRenderer:
             # Private attempts isolate even an orphan Blender left by a killed worker.
             frames = attempt_dir / 'frames'
             frames.mkdir(exist_ok=True)
-            await run_process([binary, '--background', '--factory-startup', '--python-exit-code', '1',
-                               '--python', Path(__file__).with_name('blender_scene.py'), '--', scenario_path],
-                              attempt_dir / 'blender.log', settings.BLENDER_TIMEOUT)
+            if scenario.physics:
+                script = Path(__file__).with_name('experiment_scene.py' if segment.experiment_id is not None else 'physics_scene.py')
+                cache_root = directory.parent if directory.parent.name=='segments' else directory
+                cache = cache_root/'_physics_cache'/fingerprint/'telemetry.json'
+                # Simulate/validate without rendering, then replay in a fresh process.
+                cache_valid = False
+                if cache.exists():
+                    try:
+                        cached_telemetry = json.loads(cache.read_text(encoding='utf-8'))
+                        expected = payload['experiment']['frame_count'] if 'experiment' in payload else scenario.duration*scenario.fps
+                        cache_valid = cached_telemetry.get('validated') and cached_telemetry.get('fingerprint')==fingerprint and len(cached_telemetry.get('samples',[]))==expected
+                    except (ValueError,OSError):
+                        cache_valid = False
+                if cache_valid:
+                    shutil.copyfile(cache,attempt_dir/'telemetry.json')
+                else:
+                    await run_process([binary,'--background','--factory-startup','--python-exit-code','1',
+                                       '--python',script,'--',scenario_path],attempt_dir/'physics.log',settings.BLENDER_TIMEOUT)
+                    cache.parent.mkdir(parents=True,exist_ok=True)
+                    shutil.copyfile(attempt_dir/'telemetry.json',cache)
+                await run_process([binary,'--background','--factory-startup','--python-exit-code','1',
+                                   '--python',script,'--','--playback',scenario_path],attempt_dir/'blender.log',settings.BLENDER_TIMEOUT)
+                shutil.copyfile(attempt_dir/'telemetry.json',directory/'telemetry.json')
+            else:
+                raise RuntimeError('Legacy animated scenarios must be replanned before physics rendering')
         render_time = time.monotonic() - started
         if len(list(frames.glob('*.png'))) != segment.frame_count:
             raise RuntimeError(f'Blender produced incomplete frames; see {attempt_dir / "blender.log"}')
@@ -86,5 +120,10 @@ class BlenderRenderer:
                     segment.index, segment.seed, segment.frame_count / scenario.fps,
                     [s.type for s in segment.sections], render_time, time.monotonic() - ffmpeg_started)
         (directory / 'timing.json').write_text(json.dumps({'blender_seconds': render_time,
+                                                        'fingerprint':self.render_fingerprint(scenario,segment,width,height),
+                                                        'physics_fingerprint':fingerprint,
                                                        'ffmpeg_seconds': time.monotonic() - ffmpeg_started}), encoding='utf-8')
         return output
+
+
+BlenderSimulationRenderer = BlenderRenderer

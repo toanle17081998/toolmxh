@@ -1,6 +1,6 @@
-import json
 import asyncio
 import subprocess
+import re
 from pathlib import Path
 from typing import Dict, Any
 from app.config import get_ffmpeg_binary
@@ -15,49 +15,41 @@ class QualityControlValidator:
             return {"valid": False, "error": f"File không tồn tại: {video_path}"}
 
         file_size_mb = p.stat().st_size / (1024 * 1024)
-        if file_size_mb < 0.2:
-            return {"valid": False, "error": f"File video quá nhỏ ({file_size_mb:.2f} MB), có thể bị lỗi render."}
-
-        # Dùng FFmpeg probe kiểm tra thông số kỹ thuật
-        ffmpeg_bin = get_ffmpeg_binary()
-        ffprobe_bin = str(Path(ffmpeg_bin).parent / "ffprobe.exe")
-        if not Path(ffprobe_bin).exists():
-            ffprobe_bin = "ffprobe"
-
-        cmd = [
-            ffprobe_bin,
-            "-v", "quiet",
-            "-print_format", "json",
-            "-show_format",
-            "-show_streams",
-            str(p)
-        ]
+        cmd = [get_ffmpeg_binary(),'-v','info','-xerror','-i',str(p),'-map','0:v:0','-map','0:a?',
+               '-progress','pipe:1','-nostats','-f','null','-']
 
         try:
             proc = await asyncio.create_subprocess_exec(
                 *cmd,
                 stdout=subprocess.PIPE,
-                stderr=subprocess.DEVNULL
+                stderr=subprocess.PIPE
             )
-            stdout, _ = await proc.communicate()
-            info = json.loads(stdout.decode("utf-8"))
-
-            has_video = any(s.get("codec_type") == "video" for s in info.get("streams", []))
-            has_audio = any(s.get("codec_type") == "audio" for s in info.get("streams", []))
-            duration = float(info.get("format", {}).get("duration", 0.0))
+            try:
+                stdout, stderr = await asyncio.wait_for(proc.communicate(),300)
+            except (asyncio.TimeoutError,asyncio.CancelledError):
+                if proc.returncode is None:
+                    proc.kill()
+                await proc.wait()
+                raise
+            info = stderr.decode('utf-8',errors='replace').split('Stream mapping:')[0]
+            has_video,has_audio = 'Video:' in info,'Audio:' in info
+            length = re.search(r'Duration: (\d+):(\d+):(\d+(?:\.\d+)?)',info)
+            duration = int(length[1])*3600+int(length[2])*60+float(length[3]) if length else 0
+            dimensions = bool(re.search(rf'\b{expected_width}x{expected_height}\b',info))
+            frames = re.findall(r'^frame=(\d+)',stdout.decode('utf-8'),re.MULTILINE)
 
             return {
-                "valid": has_video and has_audio and duration > 0.0,
+                "valid": proc.returncode==0 and has_video and has_audio and dimensions and duration>0 and bool(frames) and int(frames[-1])>0,
                 "file_size_mb": round(file_size_mb, 2),
                 "duration_seconds": round(duration, 2),
                 "has_video_stream": has_video,
                 "has_audio_stream": has_audio,
-                "format": info.get("format", {}).get("format_name")
+                "valid_dimensions":dimensions,
+                "decoded_frames":int(frames[-1]) if frames else 0
             }
         except Exception as e:
-            # Fallback nếu ffprobe không có trong bundle
             return {
-                "valid": True,
+                "valid": False,
                 "file_size_mb": round(file_size_mb, 2),
-                "note": f"Kiểm tra kích thước file thành công ({file_size_mb:.2f} MB)"
+                "error":type(e).__name__+': '+str(e)
             }

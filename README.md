@@ -1,15 +1,24 @@
 # Vietnamese Generative Video Factory
 
-The app also supports **Simulation / Satisfying Video**: a separate Blender pipeline for colorful procedural toy obstacle courses, without narration or subtitles. Select the video type in the existing dashboard. Short Content remains the default.
+The app also supports **Physics Simulation Video**: a Blender/Bullet construction-brick crawler obstacle course, without AI video generation, narration or subtitles. Select Physics Simulation in the existing dashboard. Short Content remains the default.
 
-Simulation MVP: one brick car, five obstacles, 30/60/180-second presets or custom 30–180 seconds, 16:9 or 9:16, deterministic seeds, segment resume/retry, procedural SFX/music, and draft/standard/high quality. Blender 4.5 LTS must be installed separately and configured with `BLENDER_PATH` or PATH.
+**Multi-content Physics Studio:** 17 idea families, 15 renderable, with seed-driven idea cards, real vehicle design comparisons, outcome-driven improvements, impacts, drop/bridge/load tests, time trials, gravity balls and domino chains. Planned material-budget and articulated-machine categories are visibly disabled. See [content framework, API and actual sample evidence](docs/SIMULATION_CONTENT_FRAMEWORK.md).
+
+```bash
+python -m app.simulation --content-type design_comparison --duration 20 --trials 3 --quality preview --seed 42
+python -m app.simulation --content-type improve_retry --duration 20 --trials 3 --seed 42
+```
+
+Real examples: `outputs/content_design_comparison_42/final.mp4`, `outputs/content_improve_retry_42/final.mp4`, `outputs/content_destruction_42/final.mp4`, `outputs/content_ball_race_42/final.mp4`, `outputs/content_chain_reaction_42/final.mp4`. These outputs remain local/ignored; scripts reproduce them.
+
+Physics MVP: a red four-wheel brick crawler, real gravity/collisions/motor-driven wheels, platform drop/ramp/stairs/gap, readable follow camera, deterministic seeds and preview/standard/high quality. A real 20-second two-segment MP4 is available at `outputs/physics_mvp_42/final.mp4`; a 10-second flip/drop prototype is at `outputs/physics_prototype_v2/prototype.mp4`. Blender 4.5 LTS must be configured with `BLENDER_PATH` or PATH.
 
 ```bash
 python -m app.simulation --smoke --seed 42
-python -m app.simulation --duration 30 --quality draft --seed 42
+python -m app.simulation --duration 20 --segment-seconds 10 --quality preview --seed 42
 ```
 
-See [Simulation setup, architecture, API, tests and limitations](docs/SIMULATION_VIDEO.md) and the [implementation plan](docs/SIMULATION_VIDEO_IMPLEMENTATION_PLAN.md). Long-duration planning is supported internally; longer public presets remain gated while render validation expands.
+See [Physics setup, architecture, API, tests and limitations](docs/PHYSICS_SIMULATION_VIDEO.md) and the [refactor plan](docs/PHYSICS_SIMULATION_REFACTOR_PLAN.md). Duration planning accepts up to 30 minutes; real-render validation currently covers the 10/20-second MVP, not long-form production readiness.
 
 > **Hệ Thống Sản Xuất Video AI Tự Động 100% Cho Mạng Xã Hội (TikTok, Reels, YouTube Shorts, YouTube)**  
 > **Nguyên tắc tối thượng:** **GENERATE, DON'T DOWNLOAD** (Toàn bộ Visual, Audio và Phụ đề được AI tự động sinh mới, tối ưu hóa từng mili-giây, không phụ thuộc vào kho video stock có sẵn).
@@ -52,6 +61,26 @@ cp .env.example .env
 - `GEMINI_API_KEY`: Dùng Google Gemini 2.5 Pro/Flash để tạo kịch bản chuyên sâu và phân tích hình ảnh.
 - `OPENAI_API_KEY`: Dùng GPT-4o / TTS HD lồng tiếng cao cấp.
 - `COMFYUI_SERVER_URL`: Địa chỉ ComfyUI cục bộ hoặc máy chủ từ xa (mặc định: `http://127.0.0.1:8188`).
+
+**Short Content:** Cần một LLM khả dụng (Gemini hoặc OpenAI) để nghiên cứu và viết kịch bản đúng chủ đề. Nếu thiếu key, model không khả dụng hoặc hết quota và không còn LLM dự phòng, hệ thống sẽ báo lỗi thay vì dùng kịch bản mẫu vũ trụ. Tương tự, khi không tạo/tìm được ảnh cho cảnh, pipeline sẽ dừng thay vì chèn ảnh hành tinh, thiên hà hoặc server không liên quan. Offline Brain chỉ hỗ trợ chuyển kịch bản có sẵn thành storyboard và metadata.
+
+### Health Character — minh hoạ theo ý nghĩa lời thoại
+
+Chủ đề sức khoẻ / giải phẫu tự động sử dụng `HEALTH_CHARACTER`: cơ quan cơ thể là nhân vật 3D, thực hiện quá trình sinh học được mô tả ở từng cảnh. Bộ nhận diện dùng chủ đề và tiêu đề kịch bản; tên linh vật dẫn chuyện trong lời thoại không tự kích hoạt chế độ sức khoẻ cho video khác chủ đề. Có thể chọn `AUTO`, `HEALTH_CHARACTER` hoặc `STANDARD` trên dashboard, qua trường API `visual_mode` hoặc CLI `--visual-mode`.
+
+- Phân tích lời thoại trước khi viết prompt: cơ quan, quá trình, nguyên nhân, hệ quả và setup → action → reaction.
+- Registry 11 cơ quan; cùng thiết kế, màu sắc, khuôn mặt và ảnh tham chiếu xuyên suốt video.
+- Prompt phải đạt relevance ≥80/100. Ảnh thật được kiểm tra cơ quan/continuity; frame video được đánh giá lại về quá trình và hành động.
+- Không tìm stock footage trong chế độ này. Không dùng ảnh tĩnh zoom/pan để thay thế chuyển động sinh học. Cần provider sinh animation thực sự (Veo hoặc Wan API) với quota hoạt động.
+- Xem `health_character_bible.json`, `character_reference/` và `health_debug/scene_NNN.json` trong thư mục dự án để kiểm tra quyết định của từng cảnh.
+
+```bash
+python -m app generate --topic "Thận lọc chất thải từ máu như thế nào" --visual-mode HEALTH_CHARACTER --video-model veo
+python -m app.health.quality --case all --plan-only --llm-model gemini-2.5-flash-lite
+python -m app.health.quality --case liver --reuse-plan --llm-model gemini-2.5-flash-lite
+```
+
+Chi tiết audit, thiết kế và kết quả kiểm thử: [docs/HEALTH_VISUAL_REFACTOR.md](docs/HEALTH_VISUAL_REFACTOR.md).
 
 ---
 

@@ -3,6 +3,7 @@ import json
 import logging
 import shutil
 import time
+import math
 from datetime import datetime
 from pathlib import Path
 from app.config import settings
@@ -60,6 +61,8 @@ class SimulationVideoService:
             scenario_path = root / 'scenario.json'
             if scenario_path.exists():
                 scenario = Scenario.model_validate_json(scenario_path.read_text(encoding='utf-8'))
+                if scenario.schema_version < 2:
+                    raise RuntimeError('Legacy animated scenario cannot resume as physics. Create a new physics project.')
             else:
                 scenario = ScenarioGenerator().generate(config)
                 temporary = root / 'scenario.json.tmp'
@@ -67,6 +70,7 @@ class SimulationVideoService:
                 temporary.replace(scenario_path)
             config.seed = scenario.seed
             state.config.simulation = config
+            state.config.topic = scenario.idea.get('title',state.config.topic)
             record('scenario', seed=scenario.seed, duration=scenario.duration, obstacles=[s.type for s in scenario.sections])
             save(PipelineStage.SIMULATION_TRACK, 10, 'Track validated; preparing segments')
             self.renderer.check_available()
@@ -81,12 +85,17 @@ class SimulationVideoService:
                 progress = state.segments_progress[segment.index]
                 directory = root / 'segments' / f'{segment.index:03d}'
                 output = directory / 'output.mp4'
+                fingerprint = self.renderer.render_fingerprint(scenario,segment,width,height)
                 cached = False
                 if progress.status == 'COMPLETED' and output.exists():
                     try:
+                        if isinstance(fingerprint,str):
+                            timing = json.loads((directory/'timing.json').read_text(encoding='utf-8')) if (directory/'timing.json').exists() else {}
+                            if timing.get('fingerprint')!=fingerprint:
+                                raise RuntimeError('Cached segment physics fingerprint changed')
                         await validate_media(output,width,height,progress.duration,scenario.fps)
                         cached = True
-                    except RuntimeError as error:
+                    except (RuntimeError,ValueError,OSError) as error:
                         record('cache_invalid', segment_id=segment.index, error=str(error))
                 if not cached:
                     for retry in range(settings.BLENDER_SEGMENT_RETRIES+1):
@@ -102,10 +111,43 @@ class SimulationVideoService:
                         started = time.monotonic()
                         try:
                             output = await self.renderer.render_segment(scenario,segment,directory,width,height)
+                            telemetry_path = directory/'telemetry.json'
+                            if telemetry_path.exists():
+                                telemetry = json.loads(telemetry_path.read_text(encoding='utf-8'))
+                                samples = telemetry['samples']
+                                offset = segment.start_frame-telemetry.get('sample_start_frame',0)
+                                bodies = samples[offset+segment.frame_count-1]
+                                for world_state,frame_bodies in ((segment.start_state,samples[offset]),(segment.end_state,bodies)):
+                                    end = frame_bodies[0]
+                                    world_state.position = tuple(end['position'])
+                                    world_state.rotation = tuple(end['rotation'])
+                                    w,x,y,z = end['rotation']
+                                    world_state.pitch = math.asin(max(-1,min(1,2*(w*y-z*x))))
+                                    world_state.physical_bodies = frame_bodies
+                                progress.checkpoint['physical_bodies'] = bodies
+                                # Authoritative trajectory events replace prior retry/resume events.
+                                if segment.experiment_id is None:
+                                    scenario.events = telemetry['events']
+                                    if 'result' in telemetry:
+                                        scenario.results = [telemetry['result']]
+                                else:
+                                    scenario.events = [e for e in scenario.events if e.get('experiment_id')!=segment.experiment_id]+telemetry['events']
+                                    result = telemetry['result']
+                                    scenario.results = [r for r in scenario.results if r['experiment_id']!=segment.experiment_id]+[result]
+                                    scenario.results.sort(key=lambda r:r['experiment_id'])
+                                    current = next(trial for trial in scenario.experiments if trial.id==segment.experiment_id)
+                                    following = next((trial for trial in scenario.experiments if trial.id==current.id+1),None)
+                                    if following:
+                                        from app.simulation.experiments import refine_next_trial
+                                        refine_next_trial(current,following,result)
                             progress.status, progress.output_path = 'COMPLETED', str(output)
                             progress.checkpoint = {'segment':segment.index, 'seed':segment.seed, 'frame':segment.start_frame+segment.frame_count,
-                                                   'vehicle_state':segment.end_state.model_dump(), 'render_status':'COMPLETED'}
+                             'vehicle_state':segment.end_state.model_dump(), 'render_status':'COMPLETED',
+                             'physical_bodies':progress.checkpoint.get('physical_bodies',[])}
                             record('render_complete',segment_id=segment.index,render_seconds=time.monotonic()-started)
+                            temporary = root/'scenario.json.tmp'
+                            temporary.write_text(scenario.model_dump_json(indent=2),encoding='utf-8')
+                            temporary.replace(scenario_path)
                             manager.save_state(state)
                             break
                         except Exception as error:
@@ -135,9 +177,14 @@ class SimulationVideoService:
             preview = root/'segments'/'001'/'preview.png'
             if preview.exists():
                 shutil.copyfile(preview,exported/'thumbnail.png')
-            metadata = {'video_type':'simulation_video','youtube_title':'Colorful Toy Vehicle Obstacle Course',
-                        'tiktok_caption':'A playful procedural toy world', 'seed':scenario.seed,
-                        'duration':scenario.duration,'segments':len(scenario.segments),'qc_result':qc}
+            metadata = {'video_type':'physics_simulation_video','youtube_title':scenario.idea.get('title','Construction Brick Physics Obstacle Course'),
+                         'tiktok_caption':scenario.idea.get('description','Brick crawler physics'), 'seed':scenario.seed,
+                         'duration':scenario.duration,'segments':len(scenario.segments),'qc_result':qc,
+                         'content_type':scenario.content_type,'idea':scenario.idea,'experiment_results':scenario.results}
+            if scenario.experiments:
+                from app.simulation.experiments import summarize_results
+                metadata['comparison_summary'] = summarize_results(scenario.results)
+                (exported/'experiment_results.json').write_text(json.dumps(scenario.results,indent=2),encoding='utf-8')
             (exported/'metadata.json').write_text(json.dumps(metadata,indent=2),encoding='utf-8')
             state.master_video_path = str(final)
             if config.aspect_ratio=='16:9':

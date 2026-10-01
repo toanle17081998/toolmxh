@@ -18,6 +18,18 @@ class RealVisualMediaEngine(ImageGenerationProvider):
     hoặc Anime Digital Art chân thực, crop chuẩn 1080x1920.
     """
 
+    supports_health_characters = True
+
+    async def generate_health_image(self, prompt, output_path, width=1080, height=1920,
+                                    seed=-1, reference_images=None):
+        import asyncio
+        Path(output_path).parent.mkdir(parents=True, exist_ok=True)
+        success = await asyncio.to_thread(self.generate_ai_visual, prompt, output_path, width, height,
+                                          seed, "polished 3D educational organ character animation")
+        if not success:
+            raise RuntimeError("Health character AI image unavailable; stock search is prohibited")
+        return output_path
+
     def __init__(self):
         # Thiết lập proxy nội bộ để kết nối Internet không bao giờ bị chặn
         self.proxy_url = "http://172.16.120.13:3128"
@@ -42,17 +54,27 @@ class RealVisualMediaEngine(ImageGenerationProvider):
             "looking", "atmosphere", "highly", "intricate", "concept", "digital"
         }
         # Tách các từ danh từ chính
-        clean = re.sub(r"[^a-zA-Z0-9\s]", " ", prompt)
+        clean = re.sub(r"[^\w\s]", " ", prompt, flags=re.UNICODE)
         words = [w for w in clean.split() if len(w) > 2 and w.lower() not in ignore_words]
         
         keywords = []
         if words:
+            keywords.append(" ".join(words))
             keywords.append(" ".join(words[:4]))
             if len(words) >= 6:
                 keywords.append(" ".join(words[2:6]))
 
         # Bản đồ ngữ nghĩa tiếng Việt nếu có
         vi_mappings = [
+            (["tim mạch", "trái tim", "human heart", "cardiovascular"], "human heart anatomy"),
+            (["gan", "liver"], "human liver anatomy"),
+            (["phổi", "lungs"], "human lungs anatomy"),
+            (["thận", "kidney"], "human kidney anatomy"),
+            (["dạ dày", "stomach"], "human stomach anatomy"),
+            (["giấc ngủ", "sleep"], "healthy sleep bedroom"),
+            (["dinh dưỡng", "nutrition", "rau củ"], "healthy food nutrition"),
+            (["tập thể dục", "exercise"], "physical exercise fitness"),
+            (["bác sĩ", "doctor"], "doctor medical consultation"),
             (["máy tính", "lượng tử", "quantum"], "Quantum computer laboratory"),
             (["mật mã", "bẻ khóa", "cryptography"], "Cyber security encryption data"),
             (["hacker", "tin tặc", "màn hình"], "Hacker cyber security screens"),
@@ -61,19 +83,19 @@ class RealVisualMediaEngine(ImageGenerationProvider):
             (["mặt trăng", "moon"], "Full Moon NASA"),
             (["sóng thần", "đại dương", "biển", "ocean"], "Huge ocean wave storm"),
             (["vũ trụ", "ngân hà", "galaxy"], "Galaxy stars nebula NASA"),
-            (["người", "nhân vật", "crowd"], "People crowd watching sky")
+            (["crowd"], "People crowd")
         ]
         for terms, mapped in vi_mappings:
-            if any(t in p for t in terms):
-                keywords.append(mapped)
+            if any(re.search(r"(?<!\w)" + re.escape(t) + r"(?!\w)", p) for t in terms):
+                keywords.insert(0, mapped)
 
-        return keywords or ["Scientific research laboratory", "Earth from space NASA"]
+        return list(dict.fromkeys(keywords))
 
-    def generate_ai_visual(self, prompt: str, output_path: str, target_w: int = 1080, target_h: int = 1920, seed: Optional[int] = None) -> bool:
+    def generate_ai_visual(self, prompt: str, output_path: str, target_w: int = 1080, target_h: int = 1920, seed: Optional[int] = None, style: str = "photorealistic masterpiece") -> bool:
         """Sinh hình ảnh 8K chân thực bám sát 100% nội dung kịch bản qua Pollinations AI."""
         try:
             # Làm giàu prompt với phong cách điện ảnh chất lượng cao
-            styled_prompt = f"{prompt}, highly detailed, sharp focus, 8k resolution, cinematic lighting, photorealistic masterpiece"
+            styled_prompt = f"{prompt}, highly detailed, sharp focus, cinematic lighting, {style}"
             encoded = urllib.parse.quote(styled_prompt)
             seed_param = f"&seed={seed}" if seed is not None else ""
             url = f"https://image.pollinations.ai/prompt/{encoded}?width=720&height=1280&nologo=true{seed_param}"
@@ -176,14 +198,7 @@ class RealVisualMediaEngine(ImageGenerationProvider):
                 if success and out_p.exists() and out_p.stat().st_size > 10000:
                     return str(out_p)
 
-        # 3. TẦNG 3: Fallback ảnh tư liệu chất lượng cao
-        fallback_query = "Space cosmos NASA" if "space" in prompt.lower() else "High technology server room"
-        fallback_url = self.search_wikimedia_image(fallback_query)
-        if fallback_url:
-            self.download_and_crop(fallback_url, str(out_p), target_w=width, target_h=height)
-            if out_p.exists() and out_p.stat().st_size > 5000:
-                return str(out_p)
-
-        # 4. TẦNG 4: Dự phòng máy tính offline hoàn toàn
-        from app.providers.image.opencut_realistic import OpenCutRealisticImageProvider
-        return await OpenCutRealisticImageProvider().generate_image(prompt, output_path, width, height, seed)
+        raise RuntimeError(
+            "Không thể tạo hoặc tìm ảnh phù hợp với nội dung cảnh. "
+            "Hãy kiểm tra dịch vụ sinh ảnh hoặc thử lại cảnh này."
+        )

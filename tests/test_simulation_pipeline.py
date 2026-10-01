@@ -23,6 +23,10 @@ class BlenderRendererTest(unittest.IsolatedAsyncioTestCase):
                 return await run_process(command,log_path,timeout)
             payload=json.loads(Path(command[-1]).read_text())
             work=Path(payload['output_dir'])
+            if '--playback' not in command:
+                (work/'telemetry.json').write_text(json.dumps({'validated':True,'fingerprint':payload['fingerprint'],'samples':[]}))
+                Path(log_path).write_text('validated physics before render')
+                return
             attempts.append(work)
             Image.new('RGB',(160,90),'red').save(work/'frames'/'000001.png')
             (work/'scene.blend').write_bytes(b'unit render boundary')

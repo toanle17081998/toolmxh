@@ -12,6 +12,24 @@ logger = logging.getLogger(__name__)
 class OpenAIDalle3Provider(ImageGenerationProvider):
     """Mô hình tạo ảnh DALL-E của OpenAI (Hỗ trợ DALL-E 3 và tự động fallback nếu hết credit hoặc model không khả dụng)."""
 
+    supports_health_characters = True
+
+    async def generate_health_image(self, prompt, output_path, width=1080, height=1920,
+                                    seed=-1, reference_images=None):
+        import asyncio
+        result = await asyncio.to_thread(
+            self.client.images.generate, model="dall-e-3", prompt=prompt,
+            size="1024x1792" if height > width else "1792x1024", quality="hd", n=1,
+        )
+        path = Path(output_path)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        def download():
+            req = urllib.request.Request(result.data[0].url, headers={"User-Agent": "Mozilla/5.0"})
+            with urllib.request.urlopen(req, timeout=60) as response:
+                path.write_bytes(response.read())
+        await asyncio.to_thread(download)
+        return str(path)
+
     def __init__(self, api_key: Optional[str] = None):
         self.api_key = api_key or settings.OPENAI_API_KEY or os.getenv("OPENAI_API_KEY")
         if not self.api_key:
@@ -70,14 +88,5 @@ class OpenAIDalle3Provider(ImageGenerationProvider):
                 logger.warning(f"OpenAI DALL-E 2 cũng gặp sự cố ({e2}). Chuyển sang Google Imagen / Visual Engine...")
 
             # 3. Fallback sang Real Visual Media Engine (Đa dạng thông minh)
-            try:
-                from app.providers.image.real_media import RealVisualMediaEngine
-                real_engine = RealVisualMediaEngine()
-                return await real_engine.generate_image(prompt, output_path, width, height, seed, negative_prompt)
-            except Exception as re:
-                logger.warning(f"RealVisualMediaEngine fallback gặp lỗi: {re}")
-
-            # 4. Fallback cuối cùng không bao giờ sập
-            from app.providers.image.neural_synthesizer import NeuralProceduralSynthesizer
-            neural = NeuralProceduralSynthesizer()
-            return await neural.generate_image(prompt, output_path, width, height, seed, negative_prompt)
+            from app.providers.image.real_media import RealVisualMediaEngine
+            return await RealVisualMediaEngine().generate_image(prompt, output_path, width, height, seed)

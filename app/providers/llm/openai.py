@@ -46,6 +46,21 @@ Trả về JSON gồm 3 facts kỳ thú, core_angle và emotional_hook."""
         response = self._call_chat_completions(messages=[{"role": "user", "content": prompt}])
         return json.loads(RobustJSONParser.extract_json_str(response.choices[0].message.content))
 
+    async def complete_json(self, prompt: str, image_paths=None, schema=None) -> Dict[str, Any]:
+        import asyncio
+        import base64
+        from pathlib import Path
+        if schema:
+            prompt += "\nReturn a SINGLE JSON OBJECT (not a bare array) conforming to: " + json.dumps(schema)
+        content = [{"type": "text", "text": prompt}]
+        for path in image_paths or []:
+            encoded = base64.b64encode(Path(path).read_bytes()).decode("ascii")
+            content.append({"type": "image_url", "image_url": {"url": f"data:image/png;base64,{encoded}"}})
+        response = await asyncio.to_thread(
+            self._call_chat_completions, [{"role": "user", "content": content}],
+        )
+        return json.loads(RobustJSONParser.extract_json_str(response.choices[0].message.content))
+
     async def generate_script(
         self,
         topic: str,

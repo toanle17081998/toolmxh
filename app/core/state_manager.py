@@ -1,6 +1,7 @@
 import json
 import os
 import shutil
+import time
 from pathlib import Path
 from typing import Optional, Dict, Any, List
 from app.models.project import ProjectConfig, ProjectState, PipelineStage, SceneStatus, SceneProgress
@@ -56,7 +57,16 @@ class ProjectStateManager:
         temp_file = self.project_dir / "project.json.tmp"
         with open(temp_file, "w", encoding="utf-8") as f:
             f.write(state.model_dump_json(indent=2))
-        temp_file.replace(self.state_file)
+        for attempt in range(6):
+            try:
+                temp_file.replace(self.state_file)
+                return
+            except PermissionError as error:
+                # Windows readers/scanners can briefly deny atomic replacement.
+                # Keep the original intact and retry only native sharing/access errors.
+                if getattr(error,'winerror',None) not in (5,32,33) or attempt==5:
+                    raise
+                time.sleep(.02*2**attempt)
 
     def update_stage(self, stage: PipelineStage, progress: float) -> ProjectState:
         state = self.load_state()

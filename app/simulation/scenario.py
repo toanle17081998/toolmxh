@@ -13,6 +13,10 @@ def vehicle_pose(sections, x, time):
 
 class ScenarioGenerator:
     def generate(self, config):
+        from app.simulation.director import SimulationDirector
+        return SimulationDirector().generate(config)
+
+    def generate_legacy_animation(self, config):
         seed = config.seed if config.seed is not None else secrets.randbits(32)
         rng = random.Random(seed)
         color = rng.choice(['red', 'blue', 'yellow', 'green', 'orange']) if config.color == 'random' else config.color
@@ -44,7 +48,7 @@ class ScenarioGenerator:
             segments.append(SegmentPlan(index=index, seed=(seed + index * 104729) % 2**32,
                                         start_frame=frame, frame_count=count, start_state=start, end_state=end,
                                         sections=context, checkpoints=[{'frame': f, 'seed': seed, 'vehicle_state': state_at(f).model_dump()} for f in checkpoint_frames]))
-        return Scenario(theme=config.theme, duration=config.duration, aspect_ratio=config.aspect_ratio,
+        return Scenario(mode='simulation_video', physics=False, theme=config.theme, duration=config.duration, aspect_ratio=config.aspect_ratio,
                         fps=config.fps, seed=seed, quality=config.quality, vehicle={'type': config.vehicle, 'color': color, 'size': 'medium'},
                         environment={'type': config.theme, 'lighting': 'studio', 'time': 'day'},
                         camera={'mode': 'dynamic_follow', 'distance': 8, 'height': 4},

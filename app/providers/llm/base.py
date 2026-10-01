@@ -7,6 +7,10 @@ from app.models.storyboard import Storyboard, VisualStyleBible
 class LLMProvider(ABC):
     """Lớp trừu tượng cho Content Brain (Gemini, OpenAI, Local)."""
 
+    async def complete_json(self, prompt: str, image_paths: Optional[List[str]] = None, schema=None) -> Dict[str, Any]:
+        """Structured semantic/vision analysis; offline providers must not invent an analysis."""
+        raise RuntimeError("A real LLM is required for health semantic analysis")
+
     @abstractmethod
     async def research_topic(self, topic: str) -> Dict[str, Any]:
         """Nghiên cứu góc nhìn hấp dẫn, sự thật giật gân về chủ đề."""

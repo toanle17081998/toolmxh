@@ -34,8 +34,15 @@ def validateTrack(sections, track_length, vehicle_length=2.6, vehicle_width=1.8)
 
 class SimulationTrackGenerator:
     def generate(self, duration, difficulty, theme, seed, window=8, limit=2):
+        from app.simulation.director import SimulationDirector
+        sections = SimulationDirector().track(duration, difficulty, seed)
+        if duration >= 10:
+            validateTrack(sections, duration*3.0+10)
+        return sections
+
+    def generate_legacy_animation(self, duration, difficulty, theme, seed, window=8, limit=2):
         rng = random.Random(seed)
-        selector = ObstacleSelector(rng, OBSTACLES, window, limit)
+        selector = ObstacleSelector(rng, [name for name in OBSTACLES if name not in ('platform_drop','gap')], window, limit)
         track_length, cursor, sections = duration * 3.0, 5.0, []
         while cursor + 9 <= track_length - 3:
             level = difficulty_at(cursor / track_length, difficulty)

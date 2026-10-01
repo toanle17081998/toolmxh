@@ -46,7 +46,7 @@ class RealFootageVideoEngine(GenerativeVideoProvider):
         clean_p = prompt.lower()
         for n in noise:
             clean_p = clean_p.replace(n, " ")
-        words = re.findall(r'[a-zA-Z]{3,}', clean_p)
+        words = re.findall(r'[^\W\d_]{3,}', clean_p, flags=re.UNICODE)
         
         # Chọn 2-4 từ khóa đặc trưng nhất
         stopwords = {"the", "and", "with", "from", "that", "this", "over", "into", "around", "their", "will", "than", "then"}
@@ -59,9 +59,6 @@ class RealFootageVideoEngine(GenerativeVideoProvider):
         if core_words:
             queries.append(core_words[0])
             
-        # Fallback chung
-        if not queries:
-            queries = ["nature landscape", "space universe", "technology"]
         return queries
 
     async def _search_pexels_video(self, query: str, orientation: str = "portrait") -> Optional[str]:

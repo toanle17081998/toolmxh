@@ -14,10 +14,11 @@ class ScenarioGeneratorTest(unittest.TestCase):
         from app.simulation.models import SimulationConfig
         from app.simulation.scenario import ScenarioGenerator
         scenario = ScenarioGenerator().generate(SimulationConfig(duration=60, seed=42))
-        self.assertEqual(scenario.mode, 'simulation_video')
+        self.assertEqual(scenario.mode, 'physics_simulation_video')
         self.assertLess(scenario.sections[0].start / scenario.speed, 5)
-        self.assertTrue(scenario.events)
-        self.assertEqual(scenario.vehicle['type'], 'brick_basic_car')
+        self.assertEqual(scenario.sections[0].type,'platform_drop')
+        self.assertEqual(scenario.events,[])  # Landing sounds come from measured physics.
+        self.assertEqual(scenario.vehicle['type'], 'brick_crawler')
 
 
 class SeedReproducibilityTest(unittest.TestCase):
@@ -55,7 +56,7 @@ class ObstacleSelectionTest(unittest.TestCase):
         self.assertTrue(all(a != b for a, b in zip(types, types[1:])))
         for start in range(len(types)):
             self.assertLessEqual(max(Counter(types[start:start+8]).values()), 2)
-        self.assertEqual(len(set(types)), 5)
+        self.assertEqual(set(types), {'platform_drop','ramp','stairs','gap'})
         self.assertGreater(max(s.difficulty for s in scenario.sections), scenario.sections[0].difficulty)
 
 

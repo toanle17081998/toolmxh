@@ -59,6 +59,7 @@ def main():
     gen_parser.add_argument("--openai-key", type=str, default=None, help="OpenAI Pro API Key")
     gen_parser.add_argument("--llm-model", type=str, default=None, help="Mô hình LLM: gemini-2.5-pro, gpt-4o...")
     gen_parser.add_argument("--video-model", type=str, default="AUTO", help="Mô hình Video: VEO, COMFYUI, AUTO")
+    gen_parser.add_argument("--visual-mode", type=str, default="AUTO", choices=["AUTO", "HEALTH_CHARACTER", "STANDARD"])
 
     # Command: regenerate
     regen_parser = subparsers.add_parser("regenerate", help="Tái tạo một scene cụ thể")
@@ -109,7 +110,8 @@ def main():
             gemini_key=g_key,
             openai_key=o_key,
             llm_model=args.llm_model,
-            video_model=args.video_model
+            video_model=args.video_model,
+            visual_mode=args.visual_mode
         )
         result = asyncio.run(factory.generate_video(
             topic=args.topic,
@@ -124,7 +126,9 @@ def main():
         state_mgr.update_scene_status(args.scene, SceneStatus.PENDING)
         console.print(f"[bold yellow]Đã reset Scene {args.scene} về PENDING. Đang chạy lại pipeline...[/bold yellow]")
         state = state_mgr.load_state()
-        factory = VietnameseVideoFactory(console_output=True)
+        factory = VietnameseVideoFactory(console_output=True, visual_mode=state.config.visual_mode,
+                                         llm_model=state.config.llm_model, image_model=state.config.image_model,
+                                         video_model=state.config.video_model, voice=state.config.voice)
         asyncio.run(factory.generate_video(
             topic=state.config.topic,
             duration=state.config.target_duration,

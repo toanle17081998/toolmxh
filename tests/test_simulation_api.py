@@ -98,7 +98,7 @@ class SimulationVideoRequestTest(unittest.TestCase):
         request = GenerateRequest(video_type='SIMULATION_VIDEO', duration=180, seed=9)
         self.assertEqual(request.simulation_config().aspect_ratio, '16:9')
         self.assertEqual(request.simulation_config().seed, 9)
-        for invalid in ({'duration': 0}, {'duration': 600}, {'quality':'invalid'}, {'seed':-1},
+        for invalid in ({'duration': 0}, {'duration': 1801}, {'quality':'invalid'}, {'seed':-1},
                         {'aspect_ratio':'1:1'}, {'vehicle':'brick_monster_truck'}, {'difficulty':9}):
             with self.assertRaises(ValidationError):
                 GenerateRequest(video_type='simulation_video', **invalid)
@@ -116,7 +116,7 @@ class SimulationVideoRequestTest(unittest.TestCase):
             self.assertEqual(len(tasks.tasks), 1)
             from app.core.state_manager import ProjectStateManager
             state = ProjectStateManager(result['project_id']).load_state()
-            self.assertEqual(state.config.video_type, 'simulation_video')
+            self.assertEqual(state.config.video_type, 'physics_simulation_video')
             self.assertEqual(state.config.simulation.seed, 123)
             server.running_projects.discard(result['project_id'])
         with tempfile.TemporaryDirectory() as root, patch.object(settings, 'PROJECTS_DIR', Path(root)):
@@ -138,13 +138,13 @@ class SimulationResumeTest(unittest.IsolatedAsyncioTestCase):
         from app.config import settings
         with tempfile.TemporaryDirectory() as root, patch.object(settings,'PROJECTS_DIR',Path(root)/'projects'), patch.object(settings,'OUTPUTS_DIR',Path(root)/'outputs'), patch.object(server,'run_factory_task',new=AsyncMock()):
             async with httpx.AsyncClient(transport=httpx.ASGITransport(app=server.app),base_url='http://test') as client:
-                invalid = await client.post('/api/generate',json={'video_type':'simulation_video','duration':600})
+                invalid = await client.post('/api/generate',json={'video_type':'simulation_video','duration':1801})
                 self.assertEqual(invalid.status_code,422)
                 created = await client.post('/api/generate',json={'video_type':'simulation_video','duration':30,'seed':7})
                 self.assertEqual(created.status_code,200)
                 project = created.json()['project_id']
                 progress = (await client.get(f'/api/progress/{project}')).json()
-                self.assertEqual(progress['config']['video_type'],'simulation_video')
+                self.assertEqual(progress['config']['video_type'],'physics_simulation_video')
                 export = settings.OUTPUTS_DIR/project
                 export.mkdir(parents=True)
                 (export/'final.mp4').write_bytes(b'download route test')

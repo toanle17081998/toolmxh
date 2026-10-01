@@ -63,6 +63,18 @@ Trả về định dạng JSON:
         )
         return json.loads(RobustJSONParser.extract_json_str(response.text))
 
+    async def complete_json(self, prompt: str, image_paths=None, schema=None) -> Dict[str, Any]:
+        import asyncio
+        from pathlib import Path
+        contents = [prompt]
+        for path in image_paths or []:
+            contents.append(types.Part.from_bytes(data=Path(path).read_bytes(), mime_type="image/png"))
+        response = await asyncio.to_thread(
+            self._call_generate_content, contents,
+            types.GenerateContentConfig(response_mime_type="application/json", response_json_schema=schema),
+        )
+        return json.loads(response.text)
+
     async def generate_script(
         self,
         topic: str,

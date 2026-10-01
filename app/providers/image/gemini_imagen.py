@@ -8,12 +8,45 @@ from app.config import settings
 
 import base64
 import logging
-from app.providers.image.neural_synthesizer import NeuralProceduralSynthesizer
 
 logger = logging.getLogger(__name__)
 
 class GeminiImagenProvider(ImageGenerationProvider):
     """Mô hình tạo ảnh AI đỉnh cao Google Pro Image (gemini-3-pro-image-preview, gemini-3.1-flash-image, Imagen 3)."""
+
+    supports_health_characters = True
+
+    @property
+    def supports_reference_images(self):
+        return "imagen" not in self.model.lower()
+
+    async def generate_health_image(self, prompt, output_path, width=1080, height=1920,
+                                    seed=-1, reference_images=None):
+        import asyncio
+        out_path = Path(output_path)
+        out_path.parent.mkdir(parents=True, exist_ok=True)
+        if not self.supports_reference_images:
+            result = await asyncio.to_thread(
+                self.client.models.generate_images, model=self.model, prompt=prompt,
+                config=types.GenerateImagesConfig(number_of_images=1, output_mime_type="image/png",
+                                                 aspect_ratio="9:16" if height > width else "16:9"),
+            )
+            out_path.write_bytes(result.generated_images[0].image.image_bytes)
+            return str(out_path)
+        contents = [prompt]
+        for path in reference_images or []:
+            contents.append(types.Part.from_bytes(data=Path(path).read_bytes(), mime_type="image/png"))
+        result = await asyncio.to_thread(
+            self.client.models.generate_content, model=self.model, contents=contents,
+            config=types.GenerateContentConfig(response_modalities=["TEXT", "IMAGE"]),
+        )
+        for candidate in getattr(result, "candidates", []) or []:
+            for part in getattr(candidate.content, "parts", []) or []:
+                if getattr(part, "inline_data", None):
+                    data = part.inline_data.data
+                    out_path.write_bytes(base64.b64decode(data) if isinstance(data, str) else data)
+                    return str(out_path)
+        raise RuntimeError("Health character image generation returned no image; no stock fallback permitted")
 
     def __init__(self, api_key: Optional[str] = None, model: str = "gemini-3-pro-image-preview"):
         self.api_key = api_key or settings.GEMINI_API_KEY or os.getenv("GEMINI_API_KEY")
@@ -76,13 +109,5 @@ class GeminiImagenProvider(ImageGenerationProvider):
 
         except Exception as e:
             logger.warning(f"Google Image Generation ({self.model}) gặp giới hạn quota ({e}), chuyển sang fallback an toàn...")
-            try:
-                from app.providers.image.real_media import RealVisualMediaEngine
-                real_engine = RealVisualMediaEngine()
-                return await real_engine.generate_image(prompt, output_path, width, height, seed, negative_prompt)
-            except Exception as re:
-                logger.warning(f"RealVisualMediaEngine fallback lỗi: {re}")
-
-            # Fallback cuối cùng không bao giờ sập
-            neural = NeuralProceduralSynthesizer()
-            return await neural.generate_image(prompt, output_path, width, height, seed, negative_prompt)
+            from app.providers.image.real_media import RealVisualMediaEngine
+            return await RealVisualMediaEngine().generate_image(prompt, output_path, width, height, seed)

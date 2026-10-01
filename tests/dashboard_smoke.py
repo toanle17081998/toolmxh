@@ -13,7 +13,18 @@ def main():
         page.on('pageerror',lambda error:errors.append(str(error)))
         page.goto(url,wait_until='networkidle')
         # The existing dashboard uses Tailwind CDN; use DOM classes if the CDN is unavailable.
-        page.select_option('#videoTypeSelect','simulation_video')
+        page.select_option('#videoTypeSelect','physics_simulation_video')
+        page.wait_for_function('simulationCatalogLoaded')
+        assert page.locator('#simulationContentType option').count()==18
+        assert page.locator('#simulationContentType option[value="mechanisms"]').evaluate('option => option.disabled')
+        page.click('#simulationIdeasBtn')
+        page.wait_for_function("document.getElementById('simulationIdeaCards').children.length===3")
+        page.locator('#simulationIdeaCards button').first.click()
+        assert 'Đã chọn:' in page.locator('#simulationIdeaStatus').inner_text()
+        page.select_option('#simulationContentType','design_comparison')
+        page.click('#simulationIdeasBtn')
+        page.wait_for_function("document.getElementById('simulationIdeaCards').children.length===3")
+        page.locator('#simulationIdeaCards button').first.click()
         assert page.locator('#shortTopicSettings').evaluate("e=>e.classList.contains('hidden')")
         assert page.locator('#shortModelSettings').evaluate("e=>e.classList.contains('hidden')")
         assert not page.locator('#simulationSettings').evaluate("e=>e.classList.contains('hidden')")
@@ -32,10 +43,15 @@ def main():
         page.route('**/api/progress/browser_sim',lambda route:route.fulfill(status=200,json={
             'stage':'SIMULATION_RENDERING','progress_percentage':25,'progress_message':'Rendering 1/3',
             'is_running':True,'task_info':{'status':'FAILED','error':'stale web attempt'},
-            'config':{'video_type':'simulation_video'},'segments_progress':{'1':{'segment_id':1,'status':'RENDERING','duration':30}}}))
+            'config':{'video_type':'physics_simulation_video'},'segments_progress':{'1':{'segment_id':1,'status':'RENDERING','duration':30}}}))
         page.click('#generateBtn')
         page.wait_for_function("document.getElementById('currentStatusText').textContent==='Rendering 1/3'")
-        assert requests[0]['video_type']=='simulation_video'
+        assert requests[0]['video_type']=='physics_simulation_video'
+        assert requests[0]['vehicle']=='brick_crawler'
+        assert requests[0]['quality']=='preview'
+        assert requests[0]['content_type']=='design_comparison'
+        assert requests[0]['idea_id'].startswith('design_comparison:')
+        assert requests[0]['trial_count']==3
         assert requests[0]['duration']==90
         assert requests[0]['seed']==42
         page.select_option('#videoTypeSelect','short_content')
@@ -44,7 +60,7 @@ def main():
         assert page.input_value('#platformSelect')=='tiktok'
         page.route('**/api/progress/restart_sim',lambda route:route.fulfill(status=200,json={
             'stage':'SIMULATION_RENDERING','is_running':False,'progress_percentage':25,
-            'config':{'video_type':'simulation_video'},'segments_progress':{}}))
+            'config':{'video_type':'physics_simulation_video'},'segments_progress':{}}))
         page.evaluate("selectProject('restart_sim')")
         page.wait_for_function("!document.getElementById('resumeSimulationBtn').classList.contains('hidden')")
         assert not errors, errors
