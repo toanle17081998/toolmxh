@@ -182,16 +182,17 @@
             </select>
           </div>
 
-          <!-- Tác vụ 3: Chuyển động Video (AI Video Engine) -->
+          <!-- Tác vụ 3: Chuyển động Video (Video Footage & AI Engine) -->
           <div>
             <label class="block text-xs font-semibold text-slate-300 mb-1 flex items-center space-x-1">
-              <span>🎬 3. Tạo chuyển động Video (Video Engine)</span>
+              <span>🎬 3. Tạo chuyển động Video (Video Engine Động Thật 100%)</span>
             </label>
             <select id="videoModelSelect" class="w-full bg-slate-950 border border-slate-700/80 rounded-lg px-2.5 py-1.5 text-xs text-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500">
-              <option value="cinematic" selected>🎥 OpenCut Multi-Layer 3D Ken Burns & Optical FX (Chân thực 100%)</option>
-              <option value="fal_minimax">🌟 Fal.ai Minimax Hailuo Video (OpenCut Video Partner)</option>
+              <option value="opencut_real" selected>🎬 OpenCut Real Dynamic Footage (Video Động Thật 100% - Kho Tư Liệu NASA & Kho Video Thế Giới)</option>
+              <option value="fal_minimax">🌟 Fal.ai Minimax Hailuo Video (AI Sinh Video Chuyển Động Thật)</option>
               <option value="veo-3.1-generate-preview">🌟 Google Veo 3.1 Cinema (Cần Google Billing)</option>
               <option value="comfyui">🖥️ Local ComfyUI (Wan 2.1 / LTX-Video)</option>
+              <option value="kenburns">🖼️ Ảnh tĩnh chuyển động Camera (Ken Burns FX)</option>
             </select>
           </div>
 
@@ -450,6 +451,13 @@
           <input type="password" id="openaiKeyInput" placeholder="sk-..."
             class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-slate-100 focus:ring-2 focus:ring-indigo-500">
           <p class="text-[11px] text-slate-500 mt-1">Dùng để kích hoạt GPT-4o, DALL-E 3 HD và Giọng đọc Studio Onyx/Nova HD.</p>
+        </div>
+
+        <div>
+          <label class="block font-bold text-slate-300 mb-1">Pexels Video API Key (Kho Video Động Thật 4K - Hoàn Toàn Miễn Phí)</label>
+          <input type="password" id="pexelsKeyInput" placeholder="Nhập API key từ pexels.com/api..."
+            class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-slate-100 focus:ring-2 focus:ring-indigo-500">
+          <p class="text-[11px] text-slate-500 mt-1">Miễn phí 20.000 lượt tải/tháng tại <a href="https://www.pexels.com/api/" target="_blank" class="text-indigo-400 underline">pexels.com/api</a> để tự động kéo hàng triệu video chuyển động thật chuẩn 4K.</p>
         </div>
       </div>
 
@@ -986,10 +994,11 @@
       const gemini = document.getElementById('geminiKeyInput').value.trim();
       const fal = document.getElementById('falKeyInput').value.trim();
       const openai = document.getElementById('openaiKeyInput').value.trim();
+      const pexels = document.getElementById('pexelsKeyInput').value.trim();
       await fetch('/api/settings', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ gemini_api_key: gemini, fal_api_key: fal, openai_api_key: openai })
+        body: JSON.stringify({ gemini_api_key: gemini, fal_api_key: fal, openai_api_key: openai, pexels_api_key: pexels })
       });
       alert('Đã lưu cài đặt API Keys thành công!');
       closeSettingsModal();

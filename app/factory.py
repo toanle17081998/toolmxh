@@ -43,13 +43,13 @@ class VietnameseVideoFactory:
         openai_key: Optional[str] = None,
         llm_model: Optional[str] = None,
         image_model: Optional[str] = None,
-        video_model: str = "cinematic"
+        video_model: str = "opencut_real"
     ):
         self.console_output = console_output
-        self.voice = voice or "charon"
+        self.voice = voice or "namminh"
         self.llm_model = llm_model or "gemini-3.8-flash"
         self.image_model = image_model or "real_media"
-        self.video_model = video_model or "cinematic"
+        self.video_model = video_model or "opencut_real"
 
         # Thiết lập key nếu được truyền vào
         if gemini_key:

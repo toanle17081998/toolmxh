@@ -22,6 +22,7 @@ class Settings(BaseSettings):
     GEMINI_API_KEY: Optional[str] = Field(default=None, alias="GEMINI_API_KEY")
     OPENAI_API_KEY: Optional[str] = Field(default=None, alias="OPENAI_API_KEY")
     FAL_KEY: Optional[str] = Field(default=None, alias="FAL_KEY")
+    PEXELS_API_KEY: Optional[str] = Field(default=None, alias="PEXELS_API_KEY")
     REPLICATE_API_TOKEN: Optional[str] = Field(default=None, alias="REPLICATE_API_TOKEN")
 
     # ComfyUI Local / Remote Server

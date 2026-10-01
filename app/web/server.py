@@ -37,7 +37,7 @@ class GenerateRequest(BaseModel):
     style: str = "Cinematic Documentary"
     llm_model: str = "gemini-3.8-flash"
     image_model: str = "real_media"
-    video_model: str = "cinematic"
+    video_model: str = "opencut_real"
     voice: str = "namminh"
     gemini_key: Optional[str] = None
     openai_key: Optional[str] = None
@@ -46,6 +46,7 @@ class SettingsUpdateRequest(BaseModel):
     gemini_api_key: Optional[str] = None
     fal_api_key: Optional[str] = None
     openai_api_key: Optional[str] = None
+    pexels_api_key: Optional[str] = None
     comfyui_server_url: Optional[str] = None
 
 # Task background runner
@@ -221,6 +222,10 @@ async def update_system_settings(req: SettingsUpdateRequest):
         keys_map["OPENAI_API_KEY"] = req.openai_api_key
         os.environ["OPENAI_API_KEY"] = req.openai_api_key
         settings.OPENAI_API_KEY = req.openai_api_key
+    if req.pexels_api_key:
+        keys_map["PEXELS_API_KEY"] = req.pexels_api_key
+        os.environ["PEXELS_API_KEY"] = req.pexels_api_key
+        settings.PEXELS_API_KEY = req.pexels_api_key
     if req.comfyui_server_url:
         keys_map["COMFYUI_SERVER_URL"] = req.comfyui_server_url
         settings.COMFYUI_SERVER_URL = req.comfyui_server_url
