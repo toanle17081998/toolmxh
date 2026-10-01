@@ -49,6 +49,14 @@ class Settings(BaseSettings):
     MAX_CONCURRENT_GPU_JOBS: int = 1
     AUTO_OFFLOAD_CUDA_CACHE: bool = True
 
+    # Simulation rendering (Blender executable is resolved from configuration or PATH).
+    BLENDER_PATH: Optional[str] = None
+    BLENDER_RENDER_ENGINE: str = 'BLENDER_EEVEE_NEXT'
+    BLENDER_TIMEOUT: int = Field(default=7200, ge=1)
+    BLENDER_MAX_PARALLEL_JOBS: int = Field(default=1, ge=1, le=16)
+    BLENDER_SEGMENT_RETRIES: int = Field(default=2, ge=0, le=5)
+    BLENDER_CLEANUP: bool = True
+
     class Config:
         env_file = ".env"
         env_file_encoding = "utf-8"

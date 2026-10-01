@@ -9,10 +9,10 @@ from app.config import settings
 
 def get_image_provider(preference: Optional[str] = None, model: Optional[str] = None) -> ImageGenerationProvider:
     """
-    Lựa chọn Image Provider thông minh & bền bỉ:
-    1. Ưu tiên Google Imagen / Gemini Vision (Nếu có GEMINI_API_KEY - Ổn định 100%, miễn phí)
-    2. OpenAI DALL-E (Nếu chỉ định rõ ràng hoặc có OPENAI_API_KEY)
-    3. Real Visual Media Engine (Đa dạng thông minh)
+    Lựa chọn Image Provider thông minh & bền bỉ 100%:
+    - Mặc định AUTO: Real Visual Media Engine (Ảnh thật chất lượng cao, 0 đồng, không lo quota)
+    - Chỉ định DALL-E: OpenAIDalle3Provider (có auto-fallback)
+    - Chỉ định Gemini: GeminiImagenProvider (nếu đã nạp Google billing)
     """
     m = (model or preference or "auto").strip().lower()
     gemini_key = os.getenv("GEMINI_API_KEY") or settings.GEMINI_API_KEY
@@ -23,15 +23,11 @@ def get_image_provider(preference: Optional[str] = None, model: Optional[str] = 
     if "dalle" in m or "openai" in m:
         if openai_key:
             return OpenAIDalle3Provider(api_key=openai_key)
-        elif gemini_key:
-            return GeminiImagenProvider(api_key=gemini_key)
 
     # 2. Người dùng chỉ định Google Gemini / Imagen
     if "gemini" in m or "imagen" in m:
         if gemini_key:
             return GeminiImagenProvider(api_key=gemini_key)
-        elif openai_key:
-            return OpenAIDalle3Provider(api_key=openai_key)
 
     # 3. Người dùng chọn FLUX / Fal
     if "flux" in m or "fal" in m:
@@ -40,13 +36,5 @@ def get_image_provider(preference: Optional[str] = None, model: Optional[str] = 
             return FalImageProvider(api_key=fal_key)
 
     # 4. Mặc định AUTO:
-    # Ưu tiên Google Gemini Imagen vì Key đang chạy 100% trơn tru và không bị lỗi quota
-    if gemini_key:
-        return GeminiImagenProvider(api_key=gemini_key)
-
-    # Nếu không có Gemini nhưng có OpenAI Key
-    if openai_key:
-        return OpenAIDalle3Provider(api_key=openai_key)
-
-    # Fallback an toàn
+    # RealVisualMediaEngine (Ảnh thật quang học 100% bám sát kịch bản, 0đ, không phụ thuộc quota API)
     return RealVisualMediaEngine()

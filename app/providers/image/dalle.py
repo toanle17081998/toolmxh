@@ -69,17 +69,7 @@ class OpenAIDalle3Provider(ImageGenerationProvider):
             except Exception as e2:
                 logger.warning(f"OpenAI DALL-E 2 cũng gặp sự cố ({e2}). Chuyển sang Google Imagen / Visual Engine...")
 
-            # 3. Fallback sang Google Gemini Imagen nếu có GEMINI_API_KEY
-            gemini_key = os.getenv("GEMINI_API_KEY") or settings.GEMINI_API_KEY
-            if gemini_key:
-                try:
-                    from app.providers.image.gemini_imagen import GeminiImagenProvider
-                    gemini_img = GeminiImagenProvider(api_key=gemini_key)
-                    return await gemini_img.generate_image(prompt, output_path, width, height, seed, negative_prompt)
-                except Exception as ge:
-                    logger.warning(f"Google Imagen fallback gặp lỗi: {ge}")
-
-            # 4. Fallback sang Real Visual Media Engine (Đa dạng thông minh)
+            # 3. Fallback sang Real Visual Media Engine (Đa dạng thông minh)
             try:
                 from app.providers.image.real_media import RealVisualMediaEngine
                 real_engine = RealVisualMediaEngine()
@@ -87,7 +77,7 @@ class OpenAIDalle3Provider(ImageGenerationProvider):
             except Exception as re:
                 logger.warning(f"RealVisualMediaEngine fallback gặp lỗi: {re}")
 
-            # 5. Fallback cuối cùng không bao giờ sập
+            # 4. Fallback cuối cùng không bao giờ sập
             from app.providers.image.neural_synthesizer import NeuralProceduralSynthesizer
             neural = NeuralProceduralSynthesizer()
             return await neural.generate_image(prompt, output_path, width, height, seed, negative_prompt)

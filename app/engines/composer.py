@@ -7,6 +7,22 @@ from app.config import get_ffmpeg_binary
 class VideoComposer:
     """Ghép nối các cảnh video AI, chèn âm thanh hoàn thiện và burn phụ đề bằng FFmpeg."""
 
+    async def compose_simulation(self, segment_paths: List[str], audio_path: str,
+                                 output_path: str, duration: float) -> str:
+        from app.simulation.blender_renderer import run_process
+        from app.config import settings
+        out = Path(output_path).resolve()
+        out.parent.mkdir(parents=True, exist_ok=True)
+        concat = out.parent / 'segments_concat.txt'
+        concat.write_text(''.join("file '" + Path(p).resolve().as_posix().replace("'", "'\\''") + "'\n" for p in segment_paths), encoding='utf-8')
+        temporary = out.with_name(out.stem + '.partial.mp4')
+        await run_process([get_ffmpeg_binary(), '-y', '-f', 'concat', '-safe', '0', '-i', concat,
+                           '-i', audio_path, '-map', '0:v:0', '-map', '1:a:0', '-c:v', 'copy',
+                           '-c:a', 'aac', '-b:a', '192k', '-t', duration, '-movflags', '+faststart', temporary],
+                          out.parent / 'composition.log', settings.BLENDER_TIMEOUT)
+        temporary.replace(out)
+        return str(out)
+
     async def compose_video(
         self,
         scene_video_paths: List[str],

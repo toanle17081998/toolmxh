@@ -75,18 +75,14 @@ class GeminiImagenProvider(ImageGenerationProvider):
             raise RuntimeError(f"Model {self.model} không trả về phần tử ảnh inline_data.")
 
         except Exception as e:
-            logger.warning(f"Google Image Generation ({self.model}) gặp giới hạn quota hoặc lỗi ({e}), chuyển sang fallback...")
-            
-            # Fallback sang OpenAI DALL-E 3 nếu có key
-            openai_key = os.getenv("OPENAI_API_KEY") or settings.OPENAI_API_KEY
-            if openai_key:
-                try:
-                    from app.providers.image.dalle import OpenAIDalle3Provider
-                    dalle = OpenAIDalle3Provider(api_key=openai_key)
-                    return await dalle.generate_image(prompt, output_path, width, height, seed, negative_prompt)
-                except Exception as de:
-                    logger.warning(f"OpenAI DALL-E 3 fallback lỗi: {de}")
+            logger.warning(f"Google Image Generation ({self.model}) gặp giới hạn quota ({e}), chuyển sang fallback an toàn...")
+            try:
+                from app.providers.image.real_media import RealVisualMediaEngine
+                real_engine = RealVisualMediaEngine()
+                return await real_engine.generate_image(prompt, output_path, width, height, seed, negative_prompt)
+            except Exception as re:
+                logger.warning(f"RealVisualMediaEngine fallback lỗi: {re}")
 
-            # Fallback cuối cùng sang Neural Procedural Synthesizer 1080x1920
+            # Fallback cuối cùng không bao giờ sập
             neural = NeuralProceduralSynthesizer()
             return await neural.generate_image(prompt, output_path, width, height, seed, negative_prompt)
