@@ -34,8 +34,10 @@ class GenerateRequest(BaseModel):
     duration: int = 60
     platform: str = "tiktok"
     style: str = "Cinematic Documentary"
+    llm_model: str = "gemini-3.8-flash"
+    image_model: str = "gemini-3-pro-image-preview"
+    video_model: str = "cinematic"
     voice: str = "onyx"
-    video_model: str = "AUTO"
     gemini_key: Optional[str] = None
     openai_key: Optional[str] = None
 
@@ -54,6 +56,8 @@ async def run_factory_task(project_id: str, req: GenerateRequest):
             voice=req.voice,
             gemini_key=req.gemini_key,
             openai_key=req.openai_key,
+            llm_model=req.llm_model,
+            image_model=req.image_model,
             video_model=req.video_model
         )
         res = await factory.generate_video(
@@ -112,8 +116,10 @@ async def regenerate_scene(project_id: str, scene_id: int, background_tasks: Bac
         duration=state.config.target_duration,
         platform=state.config.platform,
         style=state.config.style,
-        voice=state.config.voice,
-        video_model=state.config.video_model
+        llm_model=getattr(state.config, "llm_model", "gemini-3.8-flash"),
+        image_model=getattr(state.config, "image_model", "gemini-3-pro-image-preview"),
+        video_model=getattr(state.config, "video_model", "cinematic"),
+        voice=getattr(state.config, "voice", "onyx")
     )
     background_tasks.add_task(run_factory_task, project_id, req)
     return {"project_id": project_id, "scene_id": scene_id, "status": "REGENERATING"}

@@ -20,12 +20,15 @@ class GeminiLLMProvider(LLMProvider):
         self.model = model
 
     def _call_generate_content(self, contents: str, config: types.GenerateContentConfig):
-        """Gọi Gemini API với cơ chế tự động hạ cấp model nếu gặp 404 (model cũ) hoặc 429 (quota limit)."""
-        candidate_models = [self.model, "gemini-2.5-flash", "gemini-flash-latest"]
+        """Gọi Gemini API với cơ chế tự động hạ cấp model nếu gặp 404/503/429."""
+        preferred_list = [self.model, "gemini-3.8-flash", "gemini-3.5-flash-lite", "gemini-3.1-pro-preview", "gemini-2.5-flash", "gemini-flash-latest"]
+        candidate_models = []
+        for m in preferred_list:
+            if m and m not in candidate_models:
+                candidate_models.append(m)
+
         last_error = None
         for m in candidate_models:
-            if not m:
-                continue
             try:
                 return self.client.models.generate_content(
                     model=m,

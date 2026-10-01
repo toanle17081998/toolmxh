@@ -41,10 +41,14 @@ class VietnameseVideoFactory:
         gemini_key: Optional[str] = None,
         openai_key: Optional[str] = None,
         llm_model: Optional[str] = None,
-        video_model: str = "AUTO"
+        image_model: Optional[str] = None,
+        video_model: str = "cinematic"
     ):
         self.console_output = console_output
         self.voice = voice
+        self.llm_model = llm_model or "gemini-3.8-flash"
+        self.image_model = image_model or "gemini-3-pro-image-preview"
+        self.video_model = video_model or "cinematic"
 
         # Thiết lập key nếu được truyền vào
         if gemini_key:
@@ -52,10 +56,10 @@ class VietnameseVideoFactory:
         if openai_key:
             os.environ["OPENAI_API_KEY"] = openai_key
 
-        self.llm = get_llm_provider(model=llm_model)
+        self.llm = get_llm_provider(model=self.llm_model)
         self.tts = get_tts_provider(voice=voice)
-        self.image_gen = get_image_provider()
-        self.video_gen = get_video_provider(preference=video_model)
+        self.image_gen = get_image_provider(model=self.image_model)
+        self.video_gen = get_video_provider(preference=self.video_model)
         self.timeline_engine = TimelineEngine(self.tts)
         self.subtitle_engine = SubtitleEngine()
         self.audio_engine = AudioEngine()
@@ -79,7 +83,11 @@ class VietnameseVideoFactory:
             topic=topic,
             platform=platform,
             target_duration=duration,
-            language=language
+            language=language,
+            llm_model=self.llm_model,
+            image_model=self.image_model,
+            video_model=self.video_model,
+            voice=self.voice
         )
 
         state_mgr = ProjectStateManager(p_id)

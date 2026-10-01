@@ -18,15 +18,32 @@ class OpenAILLMProvider(LLMProvider):
         self.client = OpenAI(api_key=self.api_key)
         self.model = model
 
+    def _call_chat_completions(self, messages: list, json_mode: bool = True):
+        preferred = [self.model, "gpt-4o", "gpt-4o-mini"]
+        candidates = []
+        for m in preferred:
+            if m and m not in candidates:
+                candidates.append(m)
+        last_error = None
+        for m in candidates:
+            try:
+                kwargs = {
+                    "model": m,
+                    "messages": messages
+                }
+                if json_mode:
+                    kwargs["response_format"] = {"type": "json_object"}
+                return self.client.chat.completions.create(**kwargs)
+            except Exception as e:
+                last_error = e
+                continue
+        raise last_error
+
     async def research_topic(self, topic: str) -> Dict[str, Any]:
         prompt = f"""Bạn là chuyên gia nghiên cứu tài liệu video khoa học và khám phá.
 Chủ đề: "{topic}"
 Trả về JSON gồm 3 facts kỳ thú, core_angle và emotional_hook."""
-        response = self.client.chat.completions.create(
-            model=self.model,
-            messages=[{"role": "user", "content": prompt}],
-            response_format={"type": "json_object"}
-        )
+        response = self._call_chat_completions(messages=[{"role": "user", "content": prompt}])
         return json.loads(RobustJSONParser.extract_json_str(response.choices[0].message.content))
 
     async def generate_script(
@@ -57,11 +74,7 @@ Trả về JSON theo schema StructuredScript:
     }}
   ]
 }}"""
-        response = self.client.chat.completions.create(
-            model=self.model,
-            messages=[{"role": "user", "content": prompt}],
-            response_format={"type": "json_object"}
-        )
+        response = self._call_chat_completions(messages=[{"role": "user", "content": prompt}])
         return RobustJSONParser.parse_to_model(response.choices[0].message.content, StructuredScript)
 
     async def generate_storyboard(
@@ -74,11 +87,7 @@ Trả về JSON theo schema StructuredScript:
 Script: {script.model_dump_json()}
 Style Bible: {vb.model_dump_json()}
 Trả về JSON tuân thủ schema Storyboard."""
-        response = self.client.chat.completions.create(
-            model=self.model,
-            messages=[{"role": "user", "content": prompt}],
-            response_format={"type": "json_object"}
-        )
+        response = self._call_chat_completions(messages=[{"role": "user", "content": prompt}])
         return RobustJSONParser.parse_to_model(response.choices[0].message.content, Storyboard)
 
     async def generate_metadata(
@@ -87,9 +96,5 @@ Trả về JSON tuân thủ schema Storyboard."""
         script: StructuredScript
     ) -> Dict[str, Any]:
         prompt = f"Tạo metadata mạng xã hội tiếng Việt cho video: {script.title} - {topic}. Trả về JSON."
-        response = self.client.chat.completions.create(
-            model=self.model,
-            messages=[{"role": "user", "content": prompt}],
-            response_format={"type": "json_object"}
-        )
+        response = self._call_chat_completions(messages=[{"role": "user", "content": prompt}])
         return json.loads(RobustJSONParser.extract_json_str(response.choices[0].message.content))
