@@ -79,6 +79,13 @@
     <div class="lg:col-span-5 space-y-5">
       <div class="glass-panel rounded-2xl p-5 space-y-4">
         <div>
+          <label for="videoTypeSelect" class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1.5">Video Type</label>
+          <select id="videoTypeSelect" onchange="switchVideoType()" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-sm text-slate-200">
+            <option value="short_content">Short Content</option>
+            <option value="simulation_video">Simulation / Satisfying Video</option>
+          </select>
+        </div>
+        <div id="shortTopicSettings">
           <div class="flex items-center justify-between mb-1.5">
             <label class="block text-xs font-bold uppercase tracking-wider text-slate-400">Chủ đề video (Topic)</label>
             <button onclick="openTopicExplorerModal()" type="button" class="inline-flex items-center space-x-1.5 px-2.5 py-1 rounded-lg text-xs font-bold text-amber-300 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 transition shadow-sm hover:scale-[1.02]">
@@ -86,30 +93,39 @@
               <span>Khám Phá Hot Trend & Gợi Ý AI</span>
             </button>
           </div>
-          <textarea id="topicInput" rows="3" placeholder="Nhập chủ đề video của bạn hoặc bấm 'Khám Phá Hot Trend & Gợi Ý AI'..."
-            class="w-full bg-slate-900/90 border border-slate-700/80 rounded-xl p-3 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition resize-none">10 bí ẩn dưới đáy đại dương chưa từng được giải mã</textarea>
+          <textarea id="topicInput" rows="3" placeholder="Nhập vấn đề sức khỏe (ví dụ: Điều gì xảy ra với Lá Gan khi thức khuya sau 11h đêm?)..."
+            class="w-full bg-slate-900/90 border border-slate-700/80 rounded-xl p-3 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition resize-none">Điều gì thực sự xảy ra với Lá Gan khi bạn thức khuya sau 11h đêm?</textarea>
           
-          <!-- Gợi ý chủ đề nhanh theo danh mục -->
+          <!-- Gợi ý chủ đề nhanh theo Bộ Phận Cơ Thể Hoạt Hình -->
           <div class="flex flex-wrap items-center gap-1.5 mt-2">
-            <span class="text-[10px] text-slate-500 font-semibold uppercase tracking-wider mr-0.5">Hot Trend:</span>
-            <button onclick="quickSelectCategory('space')" type="button" class="text-[11px] bg-slate-800/90 hover:bg-indigo-950 hover:text-indigo-300 hover:border-indigo-500/40 text-slate-300 px-2 py-0.5 rounded-md border border-slate-700 transition flex items-center space-x-1">
-              <span>🌌 Vũ Trụ</span>
+            <span class="text-[10px] text-slate-500 font-semibold uppercase tracking-wider mr-0.5">Bộ Phận:</span>
+            <button onclick="quickSelectCategory('liver')" type="button" class="text-[11px] bg-slate-800/90 hover:bg-indigo-950 hover:text-indigo-300 hover:border-indigo-500/40 text-slate-300 px-2 py-0.5 rounded-md border border-slate-700 transition flex items-center space-x-1">
+              <span>🫘 Lá Gan</span>
             </button>
-            <button onclick="quickSelectCategory('ocean')" type="button" class="text-[11px] bg-slate-800/90 hover:bg-indigo-950 hover:text-indigo-300 hover:border-indigo-500/40 text-slate-300 px-2 py-0.5 rounded-md border border-slate-700 transition flex items-center space-x-1">
-              <span>🌊 Đại Dương</span>
+            <button onclick="quickSelectCategory('brain')" type="button" class="text-[11px] bg-slate-800/90 hover:bg-indigo-950 hover:text-indigo-300 hover:border-indigo-500/40 text-slate-300 px-2 py-0.5 rounded-md border border-slate-700 transition flex items-center space-x-1">
+              <span>🧠 Não Bộ</span>
             </button>
-            <button onclick="quickSelectCategory('history')" type="button" class="text-[11px] bg-slate-800/90 hover:bg-indigo-950 hover:text-indigo-300 hover:border-indigo-500/40 text-slate-300 px-2 py-0.5 rounded-md border border-slate-700 transition flex items-center space-x-1">
-              <span>🏛️ Lịch Sử Bí Ẩn</span>
+            <button onclick="quickSelectCategory('stomach')" type="button" class="text-[11px] bg-slate-800/90 hover:bg-indigo-950 hover:text-indigo-300 hover:border-indigo-500/40 text-slate-300 px-2 py-0.5 rounded-md border border-slate-700 transition flex items-center space-x-1">
+              <span>🧃 Dạ Dày</span>
             </button>
-            <button onclick="quickSelectCategory('tech')" type="button" class="text-[11px] bg-slate-800/90 hover:bg-indigo-950 hover:text-indigo-300 hover:border-indigo-500/40 text-slate-300 px-2 py-0.5 rounded-md border border-slate-700 transition flex items-center space-x-1">
-              <span>🤖 AI & Tương Lai</span>
+            <button onclick="quickSelectCategory('heart')" type="button" class="text-[11px] bg-slate-800/90 hover:bg-indigo-950 hover:text-indigo-300 hover:border-indigo-500/40 text-slate-300 px-2 py-0.5 rounded-md border border-slate-700 transition flex items-center space-x-1">
+              <span>🫀 Trái Tim</span>
             </button>
-            <button onclick="quickSelectCategory('psychology')" type="button" class="text-[11px] bg-slate-800/90 hover:bg-indigo-950 hover:text-indigo-300 hover:border-indigo-500/40 text-slate-300 px-2 py-0.5 rounded-md border border-slate-700 transition flex items-center space-x-1">
-              <span>🧠 Tâm Lý</span>
+            <button onclick="quickSelectCategory('kidneys')" type="button" class="text-[11px] bg-slate-800/90 hover:bg-indigo-950 hover:text-indigo-300 hover:border-indigo-500/40 text-slate-300 px-2 py-0.5 rounded-md border border-slate-700 transition flex items-center space-x-1">
+              <span>💧 Thận & Nước</span>
             </button>
-            <button id="randomTopicBtn" onclick="randomizeTopic()" type="button" class="text-[11px] bg-gradient-to-r from-indigo-500/20 to-purple-500/20 hover:from-indigo-500/30 hover:to-purple-500/30 text-indigo-300 hover:text-indigo-200 px-2.5 py-0.5 rounded-md border border-indigo-500/40 transition flex items-center space-x-1 font-semibold active:scale-95 shadow-sm">
+            <button onclick="quickSelectCategory('lungs')" type="button" class="text-[11px] bg-slate-800/90 hover:bg-indigo-950 hover:text-indigo-300 hover:border-indigo-500/40 text-slate-300 px-2 py-0.5 rounded-md border border-slate-700 transition flex items-center space-x-1">
+              <span>🫁 Lá Phổi</span>
+            </button>
+            <button onclick="quickSelectCategory('gut')" type="button" class="text-[11px] bg-slate-800/90 hover:bg-indigo-950 hover:text-indigo-300 hover:border-indigo-500/40 text-slate-300 px-2 py-0.5 rounded-md border border-slate-700 transition flex items-center space-x-1">
+              <span>🦠 Đường Ruột</span>
+            </button>
+            <button onclick="quickSelectCategory('eyes')" type="button" class="text-[11px] bg-slate-800/90 hover:bg-indigo-950 hover:text-indigo-300 hover:border-indigo-500/40 text-slate-300 px-2 py-0.5 rounded-md border border-slate-700 transition flex items-center space-x-1">
+              <span>👁️ Đôi Mắt</span>
+            </button>
+            <button id="randomTopicBtn" onclick="randomizeTopic()" type="button" class="text-[11px] bg-gradient-to-r from-emerald-500/20 to-teal-500/20 hover:from-emerald-500/30 hover:to-teal-500/30 text-emerald-300 hover:text-emerald-200 px-2.5 py-0.5 rounded-md border border-emerald-500/40 transition flex items-center space-x-1 font-semibold active:scale-95 shadow-sm">
               <span id="randomBtnIcon">🎲</span>
-              <span id="randomBtnText">AI Săn Trend</span>
+              <span id="randomBtnText">AI Săn Trend Sức Khỏe</span>
             </button>
           </div>
         </div>
@@ -123,6 +139,7 @@
               <option value="120">2 Phút</option>
               <option value="180">3 Phút</option>
             </select>
+            <input id="customDuration" type="number" min="30" max="180" value="90" aria-label="Custom duration in seconds" class="hidden mt-2 w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-sm text-slate-200">
           </div>
           <div>
             <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1.5">Nền tảng</label>
@@ -136,7 +153,7 @@
         </div>
 
         <!-- Bảng Cấu Hình AI Từng Tác Vụ -->
-        <div class="p-3.5 rounded-xl bg-slate-900/80 border border-indigo-500/20 space-y-3">
+        <div id="shortModelSettings" class="p-3.5 rounded-xl bg-slate-900/80 border border-indigo-500/20 space-y-3">
           <div class="flex items-center justify-between pb-1 border-b border-slate-800">
             <span class="text-[11px] font-extrabold uppercase tracking-wider text-indigo-400 flex items-center space-x-1.5">
               <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"></path></svg>
@@ -203,6 +220,27 @@
             </select>
           </div>
 
+          <!-- Tác vụ Linh vật Bộ phận Hoạt hình 3D -->
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 mb-1 flex items-center justify-between">
+              <span class="flex items-center space-x-1">
+                <span>🌟 Linh vật Bộ Phận Hoạt Hình (3D Pixar Mascot)</span>
+              </span>
+              <span class="text-[10px] text-amber-400 font-semibold">Dẫn chuyện xuyên suốt video</span>
+            </label>
+            <select id="mascotSelect" class="w-full bg-slate-950 border border-slate-700/80 rounded-lg px-2.5 py-1.5 text-xs text-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+              <option value="auto" selected>🎯 Tự Động Chọn Bộ Phận Theo Chủ Đề Sức Khỏe (Khuyên Dùng)</option>
+              <option value="liver">🫘 Bác Gan Cần Mẫn (Lá Gan - Thải Độc & Thức Khuya)</option>
+              <option value="brain">🧠 Bé Não Thông Thái (Bộ Não - Giấc Ngủ & Mất Tập Trung)</option>
+              <option value="stomach">🧃 Bé Dạ Dày Nhạy Cảm (Dạ Dày - Bữa Ăn & Đau Bao Tử)</option>
+              <option value="heart">🫀 Chiến Binh Trái Tim (Trái Tim - Huyết Áp & Vận Động)</option>
+              <option value="kidneys">💧 Anh Em Song Sinh Thận (Cặp Thận - Uống Nước & Nhịn Tiểu)</option>
+              <option value="lungs">🫁 Bé Phổi Trong Lành (Lá Phổi - Khói Bụi & Oxy)</option>
+              <option value="gut">🦠 Vương Quốc Đường Ruột (Hệ Vi Sinh & Tiêu Hóa)</option>
+              <option value="eyes">👁️ Bé Mắt Tinh Anh (Đôi Mắt - Ánh Sáng Xanh & Mỏi Mắt)</option>
+            </select>
+          </div>
+
           <!-- Tác vụ 4: Giọng đọc thuyết minh (Vietnamese Voiceover) -->
           <div>
             <label class="block text-xs font-semibold text-slate-300 mb-1 flex items-center space-x-1">
@@ -210,20 +248,16 @@
             </label>
             <select id="voiceSelect" class="w-full bg-slate-950 border border-slate-700/80 rounded-lg px-2.5 py-1.5 text-xs text-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500">
               <optgroup label="🌟 Studio Neural Voice (Tự Nhiên, Chuẩn Truyền Hình & TikTok - Khuyên Dùng)">
-                <option value="namminh" selected>🎙️ NamMinh Studio - Nam Trầm Điện Ảnh (Truyền Cảm, Lôi Cuốn)</option>
-                <option value="hoaimy">🎙️ HoaiMy Studio - Nữ Phát Thanh Viên (Ngọt Ngào, Rõ Chữ)</option>
-                <option value="charon">🎙️ Charon Studio - Nam Khám Phá & Kỳ Bí</option>
-                <option value="kore">🎙️ Kore Studio - Nữ Dịu Dàng & Tri Thức</option>
-                <option value="puck">🎙️ Puck Studio - Nam Trẻ Trung TikTok</option>
+                <option value="namminh" selected>🎙️ NamMinh Studio - Nam Trầm Thân Thiện (Khuyên Dùng Cho Gan / Tim)</option>
+                <option value="kore">🎙️ Kore Studio - Nữ Nhẹ Nhàng & Tri Thức (Cho Não / Dạ Dày / Phổi)</option>
+                <option value="puck">🎙️ Puck Studio - Nam Trẻ Trung TikTok (Cho Đường Ruột / Thận)</option>
+                <option value="hoaimy">🎙️ HoaiMy Studio - Nữ Phát Thanh Viên Rõ Chữ</option>
+                <option value="charon">🎙️ Charon Studio - Nam Trầm Khám Phá</option>
               </optgroup>
               <optgroup label="👑 OpenAI Studio Voice HD (Cần Credit OpenAI)">
                 <option value="onyx">🎙️ Onyx - Nam Trầm Điện Ảnh (Ấm áp, Cuốn hút)</option>
                 <option value="nova">🎙️ Nova - Nữ Truyền Cảm (Trẻ trung, Năng động)</option>
                 <option value="shimmer">🎙️ Shimmer - Nữ Dịu Dàng (Sâu lắng, Tri thức)</option>
-              </optgroup>
-              <optgroup label="💻 VoiceStudio Local">
-                <option value="cosyvoice">🎙️ CosyVoice 3 (Alibaba Local)</option>
-                <option value="kokoro">🎙️ Kokoro-82M Studio (Local)</option>
               </optgroup>
             </select>
           </div>
@@ -231,16 +265,51 @@
           <!-- Phong cách Visual -->
           <div>
             <label class="block text-xs font-semibold text-slate-300 mb-1 flex items-center space-x-1">
-              <span>🖌️ Phong cách Visual (Aesthetic Style)</span>
+              <span>🖌️ Phong cách Hoạt Hình 3D (Animation Style)</span>
             </label>
             <select id="styleSelect" class="w-full bg-slate-950 border border-slate-700/80 rounded-lg px-2.5 py-1.5 text-xs text-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500">
-              <option value="Cinematic Documentary" selected>Cinematic Documentary</option>
-              <option value="Photorealistic 8K">Photorealistic 8K</option>
-              <option value="Dark Sci-Fi Fantasy">Dark Sci-Fi Fantasy</option>
-              <option value="Cyberpunk Neon">Cyberpunk Neon</option>
-              <option value="Historical Anime">Cinematic Anime</option>
+              <option value="3D Pixar Animation" selected>✨ 3D Pixar Animation (Linh vật dễ thương, ánh sáng điện ảnh - Khuyên dùng)</option>
+              <option value="Chibi Anime 2D">🎨 Chibi Anime 2D Sinh Động</option>
+              <option value="Claymation 3D">🧸 Đất Sét Claymation Stop-motion</option>
+              <option value="Cinematic Documentary">🎬 Điện Ảnh Minh Họa Khoa Học</option>
             </select>
           </div>
+        </div>
+
+        <div id="simulationSettings" class="hidden p-3.5 rounded-xl bg-slate-900/80 border border-indigo-500/20 space-y-3">
+          <p class="text-xs text-slate-400">Xe đồ chơi vượt chướng ngại vật — không thuyết minh hoặc phụ đề.</p>
+          <div class="grid grid-cols-2 gap-3">
+            <label class="text-xs text-slate-300">Simulation Type
+              <select id="simulationType" class="mt-1 w-full bg-slate-950 border border-slate-700 rounded-lg p-2"><option value="vehicle_obstacle">Vehicle obstacle course</option></select>
+            </label>
+            <label class="text-xs text-slate-300">Aspect Ratio
+              <select id="simulationAspect" class="mt-1 w-full bg-slate-950 border border-slate-700 rounded-lg p-2"><option value="16:9">16:9 — YouTube</option><option value="9:16">9:16 — TikTok / Reels</option><option disabled>1:1 — Coming later</option></select>
+            </label>
+            <label class="text-xs text-slate-300">Vehicle
+              <select id="simulationVehicle" class="mt-1 w-full bg-slate-950 border border-slate-700 rounded-lg p-2"><option value="brick_basic_car">Brick basic car</option></select>
+            </label>
+            <label class="text-xs text-slate-300">Theme
+              <select id="simulationTheme" class="mt-1 w-full bg-slate-950 border border-slate-700 rounded-lg p-2"><option value="colorful_toy_world">Colorful toy world</option></select>
+            </label>
+            <label class="text-xs text-slate-300">Difficulty
+              <select id="simulationDifficulty" class="mt-1 w-full bg-slate-950 border border-slate-700 rounded-lg p-2"><option value="1">Easy</option><option value="2" selected>Progressive</option><option value="3">Hard</option></select>
+            </label>
+            <label class="text-xs text-slate-300">Quality
+              <select id="simulationQuality" class="mt-1 w-full bg-slate-950 border border-slate-700 rounded-lg p-2"><option value="draft">Draft — preview</option><option value="standard" selected>Standard — 720p</option><option value="high">High — 1080p</option></select>
+            </label>
+            <label class="text-xs text-slate-300">Vehicle Color
+              <select id="simulationColor" class="mt-1 w-full bg-slate-950 border border-slate-700 rounded-lg p-2"><option value="random">Random</option><option value="red">Red</option><option value="blue">Blue</option><option value="yellow">Yellow</option><option value="green">Green</option><option value="orange">Orange</option></select>
+            </label>
+            <label class="text-xs text-slate-300">Seed (optional)
+              <input id="simulationSeed" type="number" min="0" max="4294967295" placeholder="Random" class="mt-1 w-full bg-slate-950 border border-slate-700 rounded-lg p-2">
+            </label>
+          </div>
+          <div class="flex flex-wrap gap-4 text-xs text-slate-300">
+            <label><input id="simulationMusic" type="checkbox" checked> Music</label>
+            <label><input id="simulationSfx" type="checkbox" checked> Sound Effects</label>
+            <label><input id="simulationEngine" type="checkbox" checked> Engine Sound</label>
+          </div>
+          <p class="text-xs text-slate-500">MVP: 30–180 giây. Tùy chọn 5/10 phút sẽ được mở sau khi kiểm thử render dài.</p>
         </div>
 
         <button id="generateBtn" onclick="startGeneration()"
@@ -250,6 +319,7 @@
           </span>
           <span id="generateBtnText">SINH VIDEO HOÀN CHỈNH</span>
         </button>
+        <button id="resumeSimulationBtn" onclick="resumeSimulation()" class="hidden w-full py-2 text-sm text-indigo-300 border border-indigo-500/40 rounded-xl">Tiếp tục render các đoạn chưa hoàn thành</button>
       </div>
 
       <!-- Quick History Panel -->
@@ -303,7 +373,7 @@
 
         <!-- Scene Progress Table -->
         <div id="scenesContainer" class="hidden mt-3 pt-3 border-t border-slate-800">
-          <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Chi tiết từng Cảnh (Scene Grid)</h4>
+          <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Chi tiết Cảnh / Đoạn video</h4>
           <div id="scenesGrid" class="grid grid-cols-2 sm:grid-cols-4 gap-2"></div>
         </div>
       </div>
@@ -385,7 +455,7 @@
           <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-500 text-sm">
             🔍
           </span>
-          <input type="text" id="topicSearchKeyword" placeholder="Nhập từ khóa (vd: vũ trụ, rãnh mariana, robot ai, tần thủy hoàng...)"
+          <input type="text" id="topicSearchKeyword" placeholder="Nhập từ khóa (vd: thức khuya, đau bao tử, cà phê, mất ngủ, nhịn tiểu, cận thị...)"
             onkeydown="if(event.key === 'Enter') searchTopics();"
             class="w-full bg-slate-900/90 border border-slate-700/80 rounded-xl pl-9 pr-3 py-2 text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition">
         </div>
@@ -405,14 +475,17 @@
         </div>
       </div>
 
-      <!-- Danh Mục Filter Tabs -->
+      <!-- Danh Mục Filter Tabs - 8 Cơ Quan Sức Khỏe -->
       <div class="flex items-center gap-1.5 overflow-x-auto pb-1 text-xs no-scrollbar border-b border-slate-800/80">
-        <button onclick="filterCategory('all', this)" class="topic-cat-btn active-cat px-3 py-1 rounded-lg bg-indigo-600 text-white font-bold transition whitespace-nowrap">🔥 Tất Cả</button>
-        <button onclick="filterCategory('space', this)" class="topic-cat-btn px-3 py-1 rounded-lg bg-slate-900/80 text-slate-400 hover:text-slate-200 border border-slate-800 transition whitespace-nowrap">🌌 Vũ Trụ</button>
-        <button onclick="filterCategory('ocean', this)" class="topic-cat-btn px-3 py-1 rounded-lg bg-slate-900/80 text-slate-400 hover:text-slate-200 border border-slate-800 transition whitespace-nowrap">🌊 Đại Dương</button>
-        <button onclick="filterCategory('history', this)" class="topic-cat-btn px-3 py-1 rounded-lg bg-slate-900/80 text-slate-400 hover:text-slate-200 border border-slate-800 transition whitespace-nowrap">🏛️ Lịch Sử Bí Ẩn</button>
-        <button onclick="filterCategory('tech', this)" class="topic-cat-btn px-3 py-1 rounded-lg bg-slate-900/80 text-slate-400 hover:text-slate-200 border border-slate-800 transition whitespace-nowrap">🤖 Công Nghệ & AI</button>
-        <button onclick="filterCategory('psychology', this)" class="topic-cat-btn px-3 py-1 rounded-lg bg-slate-900/80 text-slate-400 hover:text-slate-200 border border-slate-800 transition whitespace-nowrap">🧠 Tâm Lý Học</button>
+        <button onclick="filterCategory('all', this)" class="topic-cat-btn active-cat px-3 py-1 rounded-lg bg-indigo-600 text-white font-bold transition whitespace-nowrap">🩺 Tất Cả Sức Khỏe</button>
+        <button onclick="filterCategory('liver', this)" class="topic-cat-btn px-3 py-1 rounded-lg bg-slate-900/80 text-slate-400 hover:text-slate-200 border border-slate-800 transition whitespace-nowrap">🫘 Bác Gan</button>
+        <button onclick="filterCategory('brain', this)" class="topic-cat-btn px-3 py-1 rounded-lg bg-slate-900/80 text-slate-400 hover:text-slate-200 border border-slate-800 transition whitespace-nowrap">🧠 Bé Não</button>
+        <button onclick="filterCategory('stomach', this)" class="topic-cat-btn px-3 py-1 rounded-lg bg-slate-900/80 text-slate-400 hover:text-slate-200 border border-slate-800 transition whitespace-nowrap">🧃 Bé Dạ Dày</button>
+        <button onclick="filterCategory('heart', this)" class="topic-cat-btn px-3 py-1 rounded-lg bg-slate-900/80 text-slate-400 hover:text-slate-200 border border-slate-800 transition whitespace-nowrap">🫀 Trái Tim</button>
+        <button onclick="filterCategory('kidneys', this)" class="topic-cat-btn px-3 py-1 rounded-lg bg-slate-900/80 text-slate-400 hover:text-slate-200 border border-slate-800 transition whitespace-nowrap">💧 Thận Lọc</button>
+        <button onclick="filterCategory('lungs', this)" class="topic-cat-btn px-3 py-1 rounded-lg bg-slate-900/80 text-slate-400 hover:text-slate-200 border border-slate-800 transition whitespace-nowrap">🫁 Phổi Khí</button>
+        <button onclick="filterCategory('gut', this)" class="topic-cat-btn px-3 py-1 rounded-lg bg-slate-900/80 text-slate-400 hover:text-slate-200 border border-slate-800 transition whitespace-nowrap">🦠 Đường Ruột</button>
+        <button onclick="filterCategory('eyes', this)" class="topic-cat-btn px-3 py-1 rounded-lg bg-slate-900/80 text-slate-400 hover:text-slate-200 border border-slate-800 transition whitespace-nowrap">👁️ Mắt Kính</button>
       </div>
 
       <!-- Danh Sách Chủ Đề Grid -->
@@ -483,6 +556,38 @@
   </div>
 
   <script>
+    let activeVideoType = 'short_content';
+    let shortDuration = '60';
+    let shortPlatform = 'tiktok';
+    function switchVideoType() {
+      const simulation = document.getElementById('videoTypeSelect').value === 'simulation_video';
+      document.getElementById('shortTopicSettings').classList.toggle('hidden', simulation);
+      document.getElementById('shortModelSettings').classList.toggle('hidden', simulation);
+      document.getElementById('simulationSettings').classList.toggle('hidden', !simulation);
+      const duration = document.getElementById('durationSelect');
+      const platform = document.getElementById('platformSelect');
+      if (simulation) {
+        shortDuration = duration.value;
+        shortPlatform = platform.value;
+        duration.innerHTML = '<option value="30">30 sec</option><option value="60" selected>1 min</option><option value="180">3 min</option><option disabled>5 min — Coming later</option><option disabled>10 min — Coming later</option><option value="custom">Custom (30–180 sec)</option>';
+        platform.value = 'youtube';
+        document.getElementById('simulationAspect').value = '16:9';
+      } else {
+        duration.innerHTML = '<option value="30">30 Giây</option><option value="60">60 Giây (Chuẩn TikTok)</option><option value="120">2 Phút</option><option value="180">3 Phút</option>';
+        duration.value = shortDuration;
+        platform.value = shortPlatform;
+      }
+      document.getElementById('customDuration').classList.add('hidden');
+    }
+    document.getElementById('durationSelect').addEventListener('change', function() {
+      document.getElementById('customDuration').classList.toggle('hidden', this.value !== 'custom');
+    });
+    document.getElementById('platformSelect').addEventListener('change', function() {
+      document.getElementById('simulationAspect').value = this.value === 'youtube' ? '16:9' : '9:16';
+    });
+    document.getElementById('simulationAspect').addEventListener('change', function() {
+      document.getElementById('platformSelect').value = this.value === '16:9' ? 'youtube' : 'tiktok';
+    });
     let activeProjectId = null;
     let pollInterval = null;
 
@@ -649,6 +754,18 @@
         const styleSelect = document.getElementById('styleSelect');
         if (styleSelect) styleSelect.value = topicObj.style;
       }
+      if (topicObj.mascot || topicObj.category) {
+        const mascotSelect = document.getElementById('mascotSelect');
+        const m = topicObj.mascot || topicObj.category;
+        if (mascotSelect && m && m !== 'all') {
+          for (let opt of mascotSelect.options) {
+            if (opt.value === m) {
+              mascotSelect.value = m;
+              break;
+            }
+          }
+        }
+      }
 
       closeTopicExplorerModal();
 
@@ -711,6 +828,9 @@
     }
 
     const STAGE_CONFIG = {
+      'SIMULATION_PLANNING': {label:'Lập kế hoạch mô phỏng', defaultPct:5},
+      'SIMULATION_TRACK': {label:'Tạo đường đua', defaultPct:10},
+      'SIMULATION_RENDERING': {label:'Render các đoạn mô phỏng', defaultPct:10},
       'CREATED': { label: '🚀 Đang khởi tạo pipeline dự án...', step: 'RESEARCH', defaultPct: 5 },
       'RESEARCH': { label: '🔍 Đang phân tích tư liệu & sự kiện giật gân...', step: 'RESEARCH', defaultPct: 10 },
       'SCRIPT': { label: '✍️ Đang viết kịch bản tiếng Việt chuẩn viral...', step: 'SCRIPT', defaultPct: 20 },
@@ -782,7 +902,7 @@
           card.className = `p-2.5 rounded-xl border text-[11px] space-y-1.5 transition-all duration-300 ${cardBorder}`;
           card.innerHTML = `
             <div class="flex items-center justify-between font-bold">
-              <span class="text-slate-200">Cảnh ${sc.scene_id}</span>
+              <span class="text-slate-200">${activeVideoType === 'simulation_video' ? 'Đoạn' : 'Cảnh'} ${sc.scene_id}</span>
               <div id="sc-st-${sc.scene_id}">${statusHtml}</div>
             </div>
             <div class="flex items-center justify-between text-[10px] text-slate-400">
@@ -808,7 +928,15 @@
 
     async function startGeneration() {
       const topic = document.getElementById('topicInput').value.trim();
-      if (!topic) return alert('Vui lòng nhập chủ đề video!');
+      const simulation = document.getElementById('videoTypeSelect').value === 'simulation_video';
+      if (!simulation && !topic) return alert('Vui lòng nhập chủ đề video!');
+      const durationValue = document.getElementById('durationSelect').value;
+      const chosenDuration = Number(durationValue === 'custom' ? document.getElementById('customDuration').value : durationValue);
+      const seedText = document.getElementById('simulationSeed').value.trim();
+      if (simulation && (!Number.isInteger(chosenDuration) || chosenDuration < 30 || chosenDuration > 180)) return alert('Thời lượng phải từ 30 đến 180 giây.');
+      if (simulation && seedText && (!Number.isInteger(Number(seedText)) || Number(seedText)<0 || Number(seedText)>4294967295)) return alert('Seed phải là số nguyên từ 0 đến 4294967295.');
+      activeVideoType = simulation ? 'simulation_video' : 'short_content';
+      document.getElementById('resumeSimulationBtn').classList.add('hidden');
 
       const btn = document.getElementById('generateBtn');
       const btnIcon = document.getElementById('generateBtnIcon');
@@ -838,14 +966,24 @@
 
       const body = {
         topic: topic,
-        duration: parseInt(document.getElementById('durationSelect').value),
+        video_type: activeVideoType,
+        duration: chosenDuration,
         platform: document.getElementById('platformSelect').value,
         style: document.getElementById('styleSelect').value,
         llm_model: document.getElementById('llmModelSelect').value,
         image_model: document.getElementById('imageModelSelect').value,
         video_model: document.getElementById('videoModelSelect').value,
-        voice: document.getElementById('voiceSelect').value
+        voice: document.getElementById('voiceSelect').value,
+        mascot: document.getElementById('mascotSelect') ? document.getElementById('mascotSelect').value : 'auto'
       };
+      if (simulation) {
+        Object.assign(body, {topic:'', simulation_type:document.getElementById('simulationType').value,
+          aspect_ratio:document.getElementById('simulationAspect').value, vehicle:document.getElementById('simulationVehicle').value,
+          theme:document.getElementById('simulationTheme').value, color:document.getElementById('simulationColor').value,
+          difficulty:Number(document.getElementById('simulationDifficulty').value),quality:document.getElementById('simulationQuality').value,
+          seed:seedText ? Number(seedText) : null, music:document.getElementById('simulationMusic').checked,
+          sound_effects:document.getElementById('simulationSfx').checked,engine_sound:document.getElementById('simulationEngine').checked});
+      }
 
       try {
         const res = await fetch('/api/generate', {
@@ -854,10 +992,11 @@
           body: JSON.stringify(body)
         });
         const data = await res.json();
+        if (!res.ok) throw new Error(typeof data.detail === 'string' ? data.detail : JSON.stringify(data.detail));
         activeProjectId = data.project_id;
         document.getElementById('projectIdDisplay').innerText = `ID Dự Án: ${activeProjectId}`;
         document.getElementById('statusIndicator').className = 'w-2.5 h-2.5 rounded-full bg-amber-400 animate-pulse';
-        document.getElementById('currentStatusText').innerText = '🔍 Đang phân tích tư liệu & sự kiện giật gân...';
+        document.getElementById('currentStatusText').innerText = simulation ? 'Đang lập kế hoạch mô phỏng...' : '🔍 Đang phân tích tư liệu & sự kiện giật gân...';
         setSmoothProgress(10);
 
         if (pollInterval) clearInterval(pollInterval);
@@ -875,6 +1014,7 @@
       try {
         const res = await fetch(`/api/progress/${activeProjectId}`);
         const data = await res.json();
+        if (data.config) activeVideoType = data.config.video_type || 'short_content';
         
         const rawPct = Math.round(data.progress_percentage || 0);
         const stageConfig = STAGE_CONFIG[data.stage] || { label: `Đang xử lý: ${data.stage}`, step: null };
@@ -883,13 +1023,18 @@
         setSmoothProgress(displayPct);
 
         if (data.stage && data.stage !== 'FAILED') {
-          document.getElementById('currentStatusText').innerText = stageConfig.label;
+          document.getElementById('currentStatusText').innerText = data.progress_message || stageConfig.label;
           highlightStep(data.stage);
         }
 
         // Cập nhật từng scene không gây chớp giật màn hình
         if (data.scenes_progress) {
           updateScenesGrid(data.scenes_progress);
+        }
+        if (activeVideoType === 'simulation_video' && data.segments_progress) {
+          updateScenesGrid(Object.values(data.segments_progress).map(s => ({scene_id:s.segment_id,
+            status:({PENDING:'PENDING',RENDERING:'GENERATING_VIDEO',COMPLETED:'VIDEO_DONE',FAILED:'FAILED'})[s.status],duration:s.duration})));
+          document.getElementById('resumeSimulationBtn').classList.toggle('hidden', data.stage === 'COMPLETED' || data.is_running === true);
         }
 
         if (data.stage === 'COMPLETED') {
@@ -915,6 +1060,17 @@
     }
 
     function highlightStep(stage) {
+      if (activeVideoType === 'simulation_video') {
+        const steps = ['stepResearch','stepScript','stepVoice','stepVisual'];
+        const labels = ['1. Kế hoạch','2. Đường đua','3. Render','4. Ghép & Âm thanh'];
+        const current = stage === 'SIMULATION_PLANNING' ? 0 : stage === 'SIMULATION_TRACK' ? 1 : stage === 'SIMULATION_RENDERING' ? 2 : 3;
+        steps.forEach((id,i) => {
+          const el = document.getElementById(id);
+          el.textContent = labels[i];
+          el.style.color = stage === 'COMPLETED' || i < current ? '#34d399' : i === current ? '#a5b4fc' : '#64748b';
+        });
+        return;
+      }
       const reset = (id, text) => {
         const el = document.getElementById(id);
         if (!el) return;
@@ -976,22 +1132,41 @@
       try {
         const metaRes = await fetch(`/media/${pId}/artifact/metadata.json`);
         const meta = await metaRes.json();
+        const simulation = meta.video_type === 'simulation_video';
+        document.getElementById('downloadSubBtn').classList.toggle('hidden', simulation);
+        document.getElementById('downloadScriptBtn').classList.toggle('hidden', simulation);
         document.getElementById('videoTitle').innerText = meta.youtube_title || 'Video Hoàn Thiện';
         document.getElementById('tiktokCaption').innerText = meta.tiktok_caption || '';
       } catch (e) {}
     }
 
     async function regenerateScene(sceneId) {
-      if (!confirm(`Bạn có chắc muốn tạo lại Cảnh ${sceneId} không?`)) return;
-      await fetch(`/api/regenerate/${activeProjectId}/${sceneId}`, { method: 'POST' });
+      if (!confirm(`Bạn có chắc muốn tạo lại ${activeVideoType === 'simulation_video' ? 'Đoạn' : 'Cảnh'} ${sceneId} không?`)) return;
+      const response = await fetch(`/api/regenerate/${activeProjectId}/${sceneId}`, { method: 'POST' });
+      if (!response.ok) return alert((await response.json()).detail || 'Không thể tạo lại');
       if (pollInterval) clearInterval(pollInterval);
       pollInterval = setInterval(pollProgress, 2000);
     }
 
+    async function resumeSimulation() {
+      if (!activeProjectId) return;
+      const response = await fetch(`/api/resume/${activeProjectId}`, {method:'POST'});
+      if (!response.ok) return alert((await response.json()).detail || 'Không thể tiếp tục');
+      document.getElementById('resumeSimulationBtn').classList.add('hidden');
+      if (pollInterval) clearInterval(pollInterval);
+      pollInterval = setInterval(pollProgress,1500);
+      pollProgress();
+    }
+
     function selectProject(pId) {
+      if (pollInterval) clearInterval(pollInterval);
+      document.getElementById('scenesGrid').innerHTML = '';
+      document.getElementById('scenesContainer').classList.add('hidden');
+      document.getElementById('resumeSimulationBtn').classList.add('hidden');
       activeProjectId = pId;
       document.getElementById('projectIdDisplay').innerText = `ID Dự Án: ${pId}`;
       showPreview(pId);
+      pollInterval = setInterval(pollProgress,1500);
       pollProgress();
     }
 

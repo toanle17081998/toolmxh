@@ -3,9 +3,17 @@ from pathlib import Path
 from typing import Optional, Dict, Any, List
 from pydantic import BaseModel, Field
 from datetime import datetime
+from app.simulation.models import SimulationConfig, SegmentProgress
+
+class VideoType(str, Enum):
+    SHORT_CONTENT = 'short_content'
+    SIMULATION_VIDEO = 'simulation_video'
 
 class PipelineStage(str, Enum):
     CREATED = "CREATED"
+    SIMULATION_PLANNING = 'SIMULATION_PLANNING'
+    SIMULATION_TRACK = 'SIMULATION_TRACK'
+    SIMULATION_RENDERING = 'SIMULATION_RENDERING'
     RESEARCH = "RESEARCH"
     SCRIPT = "SCRIPT"
     STORYBOARD = "STORYBOARD"
@@ -40,6 +48,8 @@ class SceneProgress(BaseModel):
 class ProjectConfig(BaseModel):
     project_id: str
     topic: str
+    video_type: VideoType = VideoType.SHORT_CONTENT
+    simulation: Optional[SimulationConfig] = None
     platform: str = "tiktok"  # tiktok, shorts, reels, youtube
     target_duration: int = 60
     language: str = "vi"
@@ -48,6 +58,7 @@ class ProjectConfig(BaseModel):
     image_model: str = "real_media"
     video_model: str = "cinematic"  # cinematic, veo-3.1-generate-preview, comfyui
     voice: str = "namminh"
+    mascot: Optional[str] = "dr_bear"
     created_at: datetime = Field(default_factory=datetime.now)
 
 class ProjectState(BaseModel):
@@ -55,6 +66,8 @@ class ProjectState(BaseModel):
     stage: PipelineStage = PipelineStage.CREATED
     progress_percentage: float = 0.0
     scenes_progress: Dict[int, SceneProgress] = {}
+    segments_progress: Dict[int, SegmentProgress] = Field(default_factory=dict)
+    progress_message: Optional[str] = None
     master_video_path: Optional[str] = None
     tiktok_video_path: Optional[str] = None
     youtube_video_path: Optional[str] = None

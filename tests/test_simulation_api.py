@@ -2,10 +2,49 @@ import asyncio
 import tempfile
 import unittest
 from pathlib import Path
-from unittest.mock import AsyncMock, patch
+from unittest.mock import AsyncMock, Mock, patch
 
 
 class SimulationVideoRequestTest(unittest.TestCase):
+    def test_failed_atomic_state_replace_preserves_previous_json(self):
+        from app.core.state_manager import ProjectStateManager
+        from app.models.project import ProjectConfig
+        from app.config import settings
+        with tempfile.TemporaryDirectory() as root, patch.object(settings,'PROJECTS_DIR',Path(root)):
+            manager = ProjectStateManager('atomic_test')
+            state = manager.init_project_structure(ProjectConfig(project_id='atomic_test',topic='test'))
+            original = manager.state_file.read_text(encoding='utf-8')
+            state.progress_percentage=75
+            with patch.object(Path,'replace',side_effect=PermissionError('replacement denied')):
+                with self.assertRaises(PermissionError):
+                    manager.save_state(state)
+            self.assertEqual(manager.state_file.read_text(encoding='utf-8'),original)
+
+    def test_progress_reports_inactive_after_restart_and_resume_rejects_duplicate_job(self):
+        from app.web import server
+        from app.config import settings
+        from app.simulation.models import SimulationConfig
+        from app.simulation.service import prepare_simulation_project
+        from app.models.project import PipelineStage
+        from fastapi import BackgroundTasks, HTTPException
+        async def check():
+            manager, state = prepare_simulation_project('restart_test',SimulationConfig(duration=30,seed=4))
+            state.stage=PipelineStage.SIMULATION_RENDERING
+            manager.save_state(state)
+            data = await server.get_progress('restart_test')
+            self.assertFalse(data['is_running'])
+            tasks = BackgroundTasks()
+            result = await server.resume_simulation('restart_test',tasks)
+            self.assertEqual(result['status'],'RESUMING')
+            self.assertEqual(len(tasks.tasks),1)
+            self.assertTrue((await server.get_progress('restart_test'))['is_running'])
+            with self.assertRaises(HTTPException) as error:
+                await server.resume_simulation('restart_test',BackgroundTasks())
+            self.assertEqual(error.exception.status_code,409)
+            server.running_projects.discard('restart_test')
+        with tempfile.TemporaryDirectory() as root, patch.object(settings,'PROJECTS_DIR',Path(root)):
+            asyncio.run(check())
+
     def test_legacy_request_and_stored_project_default_to_short(self):
         from app.web.server import GenerateRequest
         from app.models.project import ProjectConfig
@@ -27,7 +66,6 @@ class SimulationVideoRequestTest(unittest.TestCase):
             GenerateRequest(topic='  ')
 
     def test_enqueue_persists_state_and_does_not_render_in_handler(self):
-        from fastapi.testclient import TestClient
         from app.web import server
         from app.config import settings
         async def enqueue_test():
@@ -54,6 +92,29 @@ class SimulationVideoRequestTest(unittest.TestCase):
 
 
 class SimulationResumeTest(unittest.IsolatedAsyncioTestCase):
+    async def test_http_creation_validation_progress_and_existing_download_route(self):
+        import httpx
+        from app.web import server
+        from app.config import settings
+        with tempfile.TemporaryDirectory() as root, patch.object(settings,'PROJECTS_DIR',Path(root)/'projects'), patch.object(settings,'OUTPUTS_DIR',Path(root)/'outputs'), patch.object(server,'run_factory_task',new=AsyncMock()):
+            async with httpx.AsyncClient(transport=httpx.ASGITransport(app=server.app),base_url='http://test') as client:
+                invalid = await client.post('/api/generate',json={'video_type':'simulation_video','duration':600})
+                self.assertEqual(invalid.status_code,422)
+                created = await client.post('/api/generate',json={'video_type':'simulation_video','duration':30,'seed':7})
+                self.assertEqual(created.status_code,200)
+                project = created.json()['project_id']
+                progress = (await client.get(f'/api/progress/{project}')).json()
+                self.assertEqual(progress['config']['video_type'],'simulation_video')
+                export = settings.OUTPUTS_DIR/project
+                export.mkdir(parents=True)
+                (export/'final.mp4').write_bytes(b'download route test')
+                downloaded = await client.get(f'/media/{project}/artifact/final.mp4')
+                self.assertEqual(downloaded.status_code,200)
+                self.assertEqual(downloaded.content,b'download route test')
+                self.assertIn('final.mp4',downloaded.headers['content-disposition'])
+                self.assertEqual((await client.get(f'/media/{project}/artifact/not_allowed.txt')).status_code,403)
+                server.running_projects.discard(project)
+
     async def test_failed_segment_resumes_without_rerendering_completed_segment(self):
         from app.config import settings, get_ffmpeg_binary
         from app.simulation.models import SimulationConfig
@@ -71,7 +132,8 @@ class SimulationResumeTest(unittest.IsolatedAsyncioTestCase):
                                '-c:v','libx264','-pix_fmt','yuv420p', str(output)], directory/'test.log',30)
             return output
         with tempfile.TemporaryDirectory() as root, patch.object(settings,'PROJECTS_DIR',Path(root)/'projects'), patch.object(settings,'OUTPUTS_DIR',Path(root)/'outputs'), patch.object(settings,'BLENDER_SEGMENT_RETRIES',0):
-            renderer = AsyncMock()
+            from app.simulation.blender_renderer import BlenderRenderer
+            renderer = Mock(spec=BlenderRenderer)
             renderer.render_segment.side_effect = render
             service = SimulationVideoService(renderer=renderer)
             config = SimulationConfig(duration=4,segment_seconds=2,quality='draft',seed=3)

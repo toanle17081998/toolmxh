@@ -38,8 +38,13 @@ def cmd_hardware():
     console.print(table)
 
 def main():
+    if len(sys.argv)>1 and sys.argv[1]=='simulate':
+        from app.simulation.__main__ import main as simulation_main
+        sys.argv.pop(1)
+        return simulation_main()
     parser = argparse.ArgumentParser(description="Vietnamese Generative Video Factory CLI")
     subparsers = parser.add_subparsers(dest="command", help="Lệnh thực thi")
+    subparsers.add_parser('simulate',help='Render a Blender simulation; use simulate --help for options')
 
     # Command: generate
     gen_parser = subparsers.add_parser("generate", help="Sinh video hoàn chỉnh từ chủ đề")

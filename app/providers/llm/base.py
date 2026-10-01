@@ -18,18 +18,20 @@ class LLMProvider(ABC):
         topic: str,
         target_duration: int = 60,
         platform: str = "tiktok",
-        language: str = "vi"
+        language: str = "vi",
+        mascot_id: Optional[str] = "dr_bear"
     ) -> StructuredScript:
-        """Sinh kịch bản tiếng Việt có cấu trúc chặt chẽ gồm hook và danh sách cảnh."""
+        """Sinh kịch bản tiếng Việt có cấu trúc chặt chẽ gồm hook và danh sách cảnh có linh vật dẫn chuyện."""
         pass
 
     @abstractmethod
     async def generate_storyboard(
         self,
         script: StructuredScript,
-        visual_bible: Optional[VisualStyleBible] = None
+        visual_bible: Optional[VisualStyleBible] = None,
+        mascot_id: Optional[str] = "dr_bear"
     ) -> Storyboard:
-        """Phân rã kịch bản thành danh sách shot quay điện ảnh chi tiết."""
+        """Phân rã kịch bản thành danh sách shot quay điện ảnh chi tiết có sự hiện diện của linh vật."""
         pass
 
     @abstractmethod

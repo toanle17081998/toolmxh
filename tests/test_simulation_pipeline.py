@@ -49,7 +49,40 @@ class SimulationAudioTest(unittest.TestCase):
                 self.assertEqual(bool(np.any(samples)), enabled)
 
 
+class SimulationAudioCancellationTest(unittest.IsolatedAsyncioTestCase):
+    async def test_cancellation_waits_for_audio_writer_before_releasing_project(self):
+        import threading
+        import time
+        from app.simulation.audio import SimulationAudioManager
+        started, finished = threading.Event(), threading.Event()
+        def slow_audio(*args):
+            started.set()
+            time.sleep(.15)
+            finished.set()
+        manager = SimulationAudioManager()
+        with patch.object(manager,'generate',side_effect=slow_audio):
+            task = asyncio.create_task(manager.generate_async(None,Path('unused.wav')))
+            while not started.is_set():
+                await asyncio.sleep(.01)
+            task.cancel()
+            with self.assertRaises(asyncio.CancelledError):
+                await task
+            self.assertTrue(finished.is_set())
+
+
 class SimulationCompositionTest(unittest.IsolatedAsyncioTestCase):
+    async def test_media_validation_rejects_wrong_fps_and_duration_even_with_correct_frame_count(self):
+        from app.config import get_ffmpeg_binary
+        from app.simulation.blender_renderer import run_process
+        from app.simulation.media import validate_media
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            video = root/'wrong_fps.mp4'
+            await run_process([get_ffmpeg_binary(),'-y','-f','lavfi','-i','color=s=160x90:r=15:d=2',
+                               '-c:v','libx264','-pix_fmt','yuv420p',str(video)],root/'encode.log',30)
+            with self.assertRaises(RuntimeError):
+                await validate_media(video,160,90,1,30)
+
     async def test_real_ffmpeg_concat_has_exact_frames_audio_and_dimensions(self):
         from app.config import get_ffmpeg_binary
         from app.simulation.blender_renderer import run_process

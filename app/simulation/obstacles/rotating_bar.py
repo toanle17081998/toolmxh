@@ -11,5 +11,6 @@ class RotatingBarObstacle(BaseObstacle):
         return self.objects
 
     def configureAnimation(self, frame, time):
-        self.bar.rotation_euler.x = self.parameters['direction'] * self.parameters['speed'] * time
+        crossing_time = (self.start + self.length/2) / 3
+        self.bar.rotation_euler.x = self.parameters['direction'] * self.parameters['speed'] * (time-crossing_time)
         self.bar.keyframe_insert('rotation_euler', frame=frame)

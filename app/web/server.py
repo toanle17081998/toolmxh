@@ -7,13 +7,15 @@ from fastapi import FastAPI, BackgroundTasks, HTTPException
 from fastapi.responses import HTMLResponse, FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator, model_validator
 
 from app.config import settings
 from app.factory import VietnameseVideoFactory
 from app.core.state_manager import ProjectStateManager
 from app.core.topic_suggester import TopicExplorerService
-from app.models.project import ProjectConfig, PipelineStage, SceneStatus
+from app.models.project import ProjectConfig, PipelineStage, SceneStatus, VideoType
+from app.simulation.models import SimulationConfig
+from app.simulation.service import SimulationVideoService, prepare_simulation_project
 
 app = FastAPI(title="Vietnamese Generative Video Factory UI")
 
@@ -31,7 +33,8 @@ TEMPLATES_DIR = WEB_DIR / "templates"
 TEMPLATES_DIR.mkdir(parents=True, exist_ok=True)
 
 class GenerateRequest(BaseModel):
-    topic: str
+    topic: str = ''
+    video_type: VideoType = VideoType.SHORT_CONTENT
     duration: int = 60
     platform: str = "tiktok"
     style: str = "Cinematic Documentary"
@@ -39,8 +42,42 @@ class GenerateRequest(BaseModel):
     image_model: str = "auto"
     video_model: str = "wan2.1"
     voice: str = "namminh"
+    mascot: Optional[str] = "dr_bear"
     gemini_key: Optional[str] = None
     openai_key: Optional[str] = None
+    simulation_type: str = 'vehicle_obstacle'
+    aspect_ratio: Optional[str] = None
+    quality: str = 'standard'
+    seed: Optional[int] = None
+    vehicle: str = 'brick_basic_car'
+    color: str = 'random'
+    theme: str = 'colorful_toy_world'
+    difficulty: int = 2
+    music: bool = True
+    sound_effects: bool = True
+    engine_sound: bool = True
+
+    @field_validator('video_type', mode='before')
+    @classmethod
+    def normalize_mode(cls, value):
+        return value.lower() if isinstance(value,str) else value
+
+    def simulation_config(self):
+        aspect = self.aspect_ratio or ('9:16' if 'platform' in self.model_fields_set and self.platform in ('tiktok','shorts','reels') else '16:9')
+        return SimulationConfig(simulation_type=self.simulation_type,duration=self.duration,aspect_ratio=aspect,
+                                quality=self.quality,seed=self.seed,vehicle=self.vehicle,color=self.color,
+                                theme=self.theme,difficulty=self.difficulty,music=self.music,
+                                sound_effects=self.sound_effects,engine_sound=self.engine_sound)
+
+    @model_validator(mode='after')
+    def validate_mode(self):
+        if self.video_type == VideoType.SIMULATION_VIDEO:
+            self.simulation_config()
+            if not 30 <= self.duration <= 180:
+                raise ValueError('Simulation MVP supports 30–180 seconds; longer durations are not yet enabled')
+        elif not self.topic.strip():
+            raise ValueError('Short Content requires a topic')
+        return self
 
 class SettingsUpdateRequest(BaseModel):
     gemini_api_key: Optional[str] = None
@@ -52,9 +89,14 @@ class SettingsUpdateRequest(BaseModel):
 
 # Task background runner
 active_projects: Dict[str, Any] = {}
+running_projects: set[str] = set()
 
 async def run_factory_task(project_id: str, req: GenerateRequest):
     try:
+        if req.video_type == VideoType.SIMULATION_VIDEO:
+            res = await SimulationVideoService().generate_video(project_id,req.simulation_config())
+            active_projects[project_id] = {'status':'COMPLETED','result':res}
+            return
         factory = VietnameseVideoFactory(
             console_output=True,
             voice=req.voice,
@@ -62,7 +104,8 @@ async def run_factory_task(project_id: str, req: GenerateRequest):
             openai_key=req.openai_key,
             llm_model=req.llm_model,
             image_model=req.image_model,
-            video_model=req.video_model
+            video_model=req.video_model,
+            mascot=req.mascot or "dr_bear"
         )
         res = await factory.generate_video(
             topic=req.topic,
@@ -83,7 +126,10 @@ async def run_factory_task(project_id: str, req: GenerateRequest):
                 state.errors.append(error_msg)
                 state_mgr.save_state(state)
         except Exception:
-            pass
+            import logging
+            logging.getLogger(__name__).exception('Could not persist failed project %s',project_id)
+    finally:
+        running_projects.discard(project_id)
 
 @app.get("/", response_class=HTMLResponse)
 async def serve_dashboard():
@@ -97,7 +143,10 @@ async def serve_dashboard():
 async def start_generation(req: GenerateRequest, background_tasks: BackgroundTasks):
     import uuid
     project_id = f"proj_{uuid.uuid4().hex[:8]}"
+    if req.video_type == VideoType.SIMULATION_VIDEO:
+        prepare_simulation_project(project_id,req.simulation_config())
     active_projects[project_id] = {"status": "RUNNING"}
+    running_projects.add(project_id)
     background_tasks.add_task(run_factory_task, project_id, req)
     return {"project_id": project_id, "status": "STARTED"}
 
@@ -109,6 +158,7 @@ async def get_progress(project_id: str):
     try:
         state = state_mgr.load_state()
         data = state.model_dump()
+        data['is_running'] = project_id in running_projects
         # Thêm thông tin kết quả nếu đã hoàn thành
         if project_id in active_projects:
             data["task_info"] = active_projects[project_id]
@@ -121,6 +171,15 @@ async def regenerate_scene(project_id: str, scene_id: int, background_tasks: Bac
     state_mgr = ProjectStateManager(project_id)
     if not state_mgr.state_file.exists():
         raise HTTPException(status_code=404, detail="Project not found")
+    state = state_mgr.load_state()
+    if state.config.video_type == VideoType.SIMULATION_VIDEO:
+        if project_id in running_projects:
+            raise HTTPException(status_code=409,detail='Project already running')
+        if scene_id not in state.segments_progress:
+            raise HTTPException(status_code=404,detail='Segment not found')
+        state.segments_progress[scene_id].status = 'PENDING'
+        state_mgr.save_state(state)
+        return await resume_simulation(project_id,background_tasks)
     
     state_mgr.update_scene_status(scene_id, SceneStatus.PENDING)
     state = state_mgr.load_state()
@@ -138,6 +197,23 @@ async def regenerate_scene(project_id: str, scene_id: int, background_tasks: Bac
     background_tasks.add_task(run_factory_task, project_id, req)
     return {"project_id": project_id, "scene_id": scene_id, "status": "REGENERATING"}
 
+@app.post('/api/resume/{project_id}')
+async def resume_simulation(project_id: str, background_tasks: BackgroundTasks):
+    manager = ProjectStateManager(project_id)
+    if not manager.state_file.exists():
+        raise HTTPException(status_code=404,detail='Project not found')
+    state = manager.load_state()
+    if state.config.video_type != VideoType.SIMULATION_VIDEO or state.config.simulation is None:
+        raise HTTPException(status_code=400,detail='Resume endpoint is for simulation projects')
+    if project_id in running_projects:
+        raise HTTPException(status_code=409,detail='Project already running')
+    req = GenerateRequest(video_type='simulation_video', **{k:v for k,v in state.config.simulation.model_dump().items()
+                          if k in GenerateRequest.model_fields})
+    running_projects.add(project_id)
+    active_projects[project_id] = {'status':'RUNNING'}
+    background_tasks.add_task(run_factory_task,project_id,req)
+    return {'project_id':project_id,'status':'RESUMING'}
+
 @app.get("/api/projects")
 async def list_projects():
     projects_dir = settings.PROJECTS_DIR
@@ -152,6 +228,7 @@ async def list_projects():
                     "project_id": p.name,
                     "topic": state.config.topic,
                     "platform": state.config.platform,
+                    "video_type": state.config.video_type,
                     "stage": state.stage,
                     "created_at": state.config.created_at.strftime("%Y-%m-%d %H:%M")
                 })
@@ -260,7 +337,7 @@ async def get_project_video(project_id: str):
 # Endpoint tải file artifact
 @app.get("/media/{project_id}/artifact/{filename}")
 async def get_artifact(project_id: str, filename: str):
-    allowed = ["final.mp4", "thumbnail.png", "script.txt", "subtitle.srt", "metadata.json"]
+    allowed = ["final.mp4", "thumbnail.png", "script.txt", "subtitle.srt", "metadata.json", "scenario.json"]
     if filename not in allowed:
         raise HTTPException(status_code=403, detail="File không được phép truy cập")
     p = settings.OUTPUTS_DIR / project_id / filename

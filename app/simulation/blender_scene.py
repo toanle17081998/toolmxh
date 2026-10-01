@@ -13,6 +13,7 @@ def build(payload):
     from app.simulation.vehicle import VehicleGenerator
     from app.simulation.camera import CameraController
     from app.simulation.obstacles import OBSTACLES
+    from app.simulation.motion import vehicle_pose
 
     bpy.ops.object.select_all(action='SELECT')
     bpy.ops.object.delete(use_global=False)
@@ -59,6 +60,9 @@ def build(payload):
         obstacles.append(plugin)
     vehicle = VehicleGenerator()
     vehicle.create(scenario['vehicle']['type'], scenario['vehicle']['color'])
+    if scene.rigidbody_world:
+        scene.rigidbody_world.point_cache.frame_start = 1
+        scene.rigidbody_world.point_cache.frame_end = segment['frame_count']+1
     camera = CameraController(scenario['camera']['mode'], scenario['aspect_ratio']=='9:16')
     lights = []
     for location, energy, size in (((0,-6,12),1800,10), ((5,6,8),1200,8), ((-8,2,6),800,6)):
@@ -70,12 +74,7 @@ def build(payload):
     for frame in range(1, segment['frame_count']+2):
         time = (segment['start_frame'] + frame-1) / scenario['fps']
         x = time * scenario['speed']
-        z, pitch = 0.0, 0.0
-        for obstacle in obstacles:
-            if obstacle.start <= x <= obstacle.start + obstacle.length:
-                z = obstacle.height_at(x,time)
-                slope = (obstacle.height_at(x+.08,time)-obstacle.height_at(x-.08,time))/.16
-                pitch = -math.atan(slope)
+        z, pitch = vehicle_pose(segment['sections'],x,time)
         vehicle.animate(frame,x,z,pitch,time)
         camera.animate(frame,time,(x,0,z))
         for obstacle in obstacles:

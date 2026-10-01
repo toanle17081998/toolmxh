@@ -5,7 +5,7 @@ from .base import BaseObstacle
 class MovingPlatformObstacle(BaseObstacle):
     def createGeometry(self):
         from app.simulation.geometry import box
-        self.platform = box('Lift platform', (self.start + self.length/2, 0, -.15), (self.length*.55, self.section['width'], .3), self.parameters['color'])
+        self.platform = box('Lift platform', (self.start + self.length/2, 0, -.15), (self.length, self.section['width'], .3), self.parameters['color'])
         self.objects = [self.platform]
         return self.objects
 

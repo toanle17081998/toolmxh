@@ -37,9 +37,9 @@ class SimulationTrackGenerator:
         rng = random.Random(seed)
         selector = ObstacleSelector(rng, OBSTACLES, window, limit)
         track_length, cursor, sections = duration * 3.0, 5.0, []
-        while cursor + 12 < track_length - 3:
+        while cursor + 9 <= track_length - 3:
             level = difficulty_at(cursor / track_length, difficulty)
-            length = rng.uniform(9, 12)
+            length = min(rng.uniform(9, 12), track_length - 3 - cursor)
             sections.append(TrackSection(
                 type=selector.choose(level, 'brick_basic_car', theme, int(cursor / 90)),
                 start=cursor, length=length, width=5.6 - level * .2, difficulty=level,

@@ -43,13 +43,15 @@ class VietnameseVideoFactory:
         openai_key: Optional[str] = None,
         llm_model: Optional[str] = None,
         image_model: Optional[str] = None,
-        video_model: str = "wan2.1"
+        video_model: str = "wan2.1",
+        mascot: str = "dr_bear"
     ):
         self.console_output = console_output
         self.voice = voice or "namminh"
         self.llm_model = llm_model or "gemini-3.8-flash"
         self.image_model = image_model or "auto"
         self.video_model = video_model or "wan2.1"
+        self.mascot = mascot or "dr_bear"
 
         # Thiết lập key nếu được truyền vào
         if gemini_key:
@@ -111,6 +113,11 @@ class VietnameseVideoFactory:
                 from app.providers.llm.offline import OfflineBrainProvider
                 return OfflineBrainProvider()
 
+        from app.models.mascot import get_mascot
+        mascot_profile = get_mascot(mascot_id=self.mascot, topic=topic)
+        config.mascot = mascot_profile.id
+        self.log(f"Linh vật hoạt hình 3D dẫn chuyện: {mascot_profile.name} ({mascot_profile.role_title})", style="bold magenta")
+
         # 1. RESEARCH
         state_mgr.update_stage(PipelineStage.RESEARCH, 5.0)
         self.log(f"Đang nghiên cứu chủ đề bằng não bộ {self.llm.__class__.__name__}...")
@@ -125,34 +132,34 @@ class VietnameseVideoFactory:
 
         # 2. SCRIPT
         state_mgr.update_stage(PipelineStage.SCRIPT, 15.0)
-        self.log(f"Đang xây dựng kịch bản tiếng Việt bằng {self.llm.__class__.__name__}...")
+        self.log(f"Đang xây dựng kịch bản hoạt hình với {mascot_profile.name} bằng {self.llm.__class__.__name__}...")
         try:
-            script = await self.llm.generate_script(topic, duration, platform, language)
+            script = await self.llm.generate_script(topic, duration, platform, language, mascot_id=mascot_profile.id)
         except Exception as e:
             self.log(f"LLM gặp sự cố ({e}), tự động chuyển sang mô hình dự phòng...", style="bold yellow")
             self.llm = _get_fallback_llm(self.llm)
-            script = await self.llm.generate_script(topic, duration, platform, language)
+            script = await self.llm.generate_script(topic, duration, platform, language, mascot_id=mascot_profile.id)
 
         # Đảm bảo cảnh cuối luôn có đoạn Outro Call-To-Action (CTA) mời theo dõi kênh
         if script.scenes:
             last_scene = script.scenes[-1]
             cta_keywords = ["theo dõi", "đăng ký", "follow", "subscribe", "bấm like", "thả tim"]
             if not any(k in last_scene.narration.lower() for k in cta_keywords):
-                last_scene.narration += " Đừng quên bấm like và theo dõi kênh để đón xem những video thú vị tiếp theo nhé!"
+                last_scene.narration += f" Đừng quên bấm like và theo dõi để cùng {mascot_profile.name} chăm sóc sức khỏe mỗi ngày nhé!"
 
         with open(p_dir / "script" / "script.json", "w", encoding="utf-8") as f:
             f.write(script.model_dump_json(indent=2))
-        self.log(f"Kịch bản đã hoàn thành: '{script.title}' ({len(script.scenes)} scenes)", style="green")
+        self.log(f"Kịch bản hoạt hình đã hoàn thành: '{script.title}' ({len(script.scenes)} scenes)", style="green")
 
         # 3. STORYBOARD
         state_mgr.update_stage(PipelineStage.STORYBOARD, 25.0)
-        self.log(f"Đang chuyển đổi thành Storyboard bằng {self.llm.__class__.__name__}...")
+        self.log(f"Đang chuyển đổi thành Storyboard 3D hoạt hình với {mascot_profile.name}...")
         try:
-            storyboard = await self.llm.generate_storyboard(script)
+            storyboard = await self.llm.generate_storyboard(script, mascot_id=mascot_profile.id)
         except Exception as e:
             self.log(f"LLM gặp sự cố ({e}), tự động chuyển sang mô hình dự phòng...", style="bold yellow")
             self.llm = _get_fallback_llm(self.llm)
-            storyboard = await self.llm.generate_storyboard(script)
+            storyboard = await self.llm.generate_storyboard(script, mascot_id=mascot_profile.id)
         with open(p_dir / "storyboard" / "storyboard.json", "w", encoding="utf-8") as f:
             f.write(storyboard.model_dump_json(indent=2))
 

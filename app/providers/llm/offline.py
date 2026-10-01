@@ -23,7 +23,8 @@ class OfflineBrainProvider(LLMProvider):
         topic: str,
         target_duration: int = 60,
         platform: str = "tiktok",
-        language: str = "vi"
+        language: str = "vi",
+        mascot_id: Optional[str] = "dr_bear"
     ) -> StructuredScript:
         # Xây dựng kịch bản 8 cảnh kịch tính theo chuẩn cấu trúc video ngắn
         scenes = [
@@ -115,7 +116,8 @@ class OfflineBrainProvider(LLMProvider):
     async def generate_storyboard(
         self,
         script: StructuredScript,
-        visual_bible: Optional[VisualStyleBible] = None
+        visual_bible: Optional[VisualStyleBible] = None,
+        mascot_id: Optional[str] = "dr_bear"
     ) -> Storyboard:
         vb = visual_bible or VisualStyleBible()
         scenes_sb = []

@@ -56,7 +56,7 @@ class ProjectStateManager:
         temp_file = self.project_dir / "project.json.tmp"
         with open(temp_file, "w", encoding="utf-8") as f:
             f.write(state.model_dump_json(indent=2))
-        shutil.move(str(temp_file), str(self.state_file))
+        temp_file.replace(self.state_file)
 
     def update_stage(self, stage: PipelineStage, progress: float) -> ProjectState:
         state = self.load_state()

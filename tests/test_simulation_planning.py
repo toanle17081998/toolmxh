@@ -3,6 +3,13 @@ from collections import Counter
 
 
 class ScenarioGeneratorTest(unittest.TestCase):
+    def test_six_second_smoke_contains_an_obstacle(self):
+        from app.simulation.models import SimulationConfig
+        from app.simulation.scenario import ScenarioGenerator
+        scenario = ScenarioGenerator().generate(SimulationConfig(duration=6,seed=42,segment_seconds=3))
+        self.assertTrue(scenario.sections)
+        self.assertEqual(len(scenario.segments),2)
+
     def test_scenario_has_events_and_action_in_first_five_seconds(self):
         from app.simulation.models import SimulationConfig
         from app.simulation.scenario import ScenarioGenerator
@@ -53,6 +60,19 @@ class ObstacleSelectionTest(unittest.TestCase):
 
 
 class TrackGeneratorTest(unittest.TestCase):
+    def test_stair_surface_matches_mesh_top_and_lift_keeps_vehicle_level(self):
+        from app.simulation.obstacles.stairs import StairsObstacle
+        from app.simulation.scenario import vehicle_pose
+        section = {'type':'stairs','start':5,'length':12,'width':5,'parameters':{'height':1,'color':'blue'}}
+        stairs = StairsObstacle(section)
+        self.assertAlmostEqual(stairs.height_at(5.75,2), .25)
+        for i in range(8):
+            self.assertAlmostEqual(stairs.height_at(5+(i+.5)*1.5,2), min(i+1,8-i)/4)
+        section['type']='moving_platform'
+        height, pitch = vehicle_pose([section],8,8/3)
+        self.assertGreater(height,0)
+        self.assertAlmostEqual(pitch,0)
+
     def test_validation_rejects_overlap_spawn_boundaries_and_gap(self):
         from app.simulation.track import SimulationTrackGenerator, validateTrack
         sections = SimulationTrackGenerator().generate(60, 2, 'colorful_toy_world', 12)

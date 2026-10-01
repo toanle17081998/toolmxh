@@ -4,17 +4,11 @@ import secrets
 from app.simulation.models import Scenario, SegmentPlan, WorldState
 from app.simulation.track import SimulationTrackGenerator, difficulty_at
 from app.simulation.obstacles import OBSTACLES
+from app.simulation.motion import vehicle_pose as _vehicle_pose
 
 
 def vehicle_pose(sections, x, time):
-    for section in sections:
-        data = section.model_dump() if hasattr(section, 'model_dump') else section
-        if data['start'] <= x <= data['start'] + data['length']:
-            obstacle = OBSTACLES[data['type']](data)
-            height = obstacle.height_at(x, time)
-            slope = (obstacle.height_at(x + .08, time) - obstacle.height_at(x - .08, time)) / .16
-            return height, -math.atan(slope)
-    return 0.0, 0.0
+    return _vehicle_pose([s.model_dump() if hasattr(s,'model_dump') else s for s in sections],x,time)
 
 
 class ScenarioGenerator:

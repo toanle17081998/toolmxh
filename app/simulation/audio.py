@@ -1,10 +1,21 @@
 import math
+import asyncio
 import wave
 from pathlib import Path
 import numpy as np
 
 
 class SimulationAudioManager:
+    async def generate_async(self, scenario, output_path):
+        writer = asyncio.create_task(asyncio.to_thread(self.generate,scenario,output_path))
+        try:
+            return await asyncio.shield(writer)
+        except asyncio.CancelledError:
+            # A cancelled asyncio task cannot stop a thread. Keep project ownership
+            # until the WAV writer closes, preventing immediate resume from racing it.
+            await writer
+            raise
+
     def generate(self, scenario, output_path):
         """Original, synchronized audio in one-second chunks, even for long videos."""
         output_path = Path(output_path)

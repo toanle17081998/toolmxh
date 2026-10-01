@@ -1,5 +1,16 @@
 # Vietnamese Generative Video Factory
 
+The app also supports **Simulation / Satisfying Video**: a separate Blender pipeline for colorful procedural toy obstacle courses, without narration or subtitles. Select the video type in the existing dashboard. Short Content remains the default.
+
+Simulation MVP: one brick car, five obstacles, 30/60/180-second presets or custom 30–180 seconds, 16:9 or 9:16, deterministic seeds, segment resume/retry, procedural SFX/music, and draft/standard/high quality. Blender 4.5 LTS must be installed separately and configured with `BLENDER_PATH` or PATH.
+
+```bash
+python -m app.simulation --smoke --seed 42
+python -m app.simulation --duration 30 --quality draft --seed 42
+```
+
+See [Simulation setup, architecture, API, tests and limitations](docs/SIMULATION_VIDEO.md) and the [implementation plan](docs/SIMULATION_VIDEO_IMPLEMENTATION_PLAN.md). Long-duration planning is supported internally; longer public presets remain gated while render validation expands.
+
 > **Hệ Thống Sản Xuất Video AI Tự Động 100% Cho Mạng Xã Hội (TikTok, Reels, YouTube Shorts, YouTube)**  
 > **Nguyên tắc tối thượng:** **GENERATE, DON'T DOWNLOAD** (Toàn bộ Visual, Audio và Phụ đề được AI tự động sinh mới, tối ưu hóa từng mili-giây, không phụ thuộc vào kho video stock có sẵn).
 
