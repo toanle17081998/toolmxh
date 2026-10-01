@@ -1,0 +1,11 @@
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.env
+outputs/
+*.temp.mp3
+*.temp_edge.mp3
+test_*.mp3
+test_*.wav
+.pytest_cache/
