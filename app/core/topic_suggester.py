@@ -317,4 +317,95 @@ Trả về DUY NHẤT một mảng JSON với cấu trúc sau:
 
         # 3. Fallback an toàn về dữ liệu tuyển chọn
         return TopicExplorerService.get_curated_topics(keyword, category)
-        return TopicExplorerService.get_curated_topics(keyword, category)
+
+    @staticmethod
+    async def generate_single_live_trend(
+        category: Optional[str] = None,
+        gemini_key: Optional[str] = None,
+        openai_key: Optional[str] = None
+    ) -> Dict[str, Any]:
+        """Tự động sinh 1 chủ đề video viral triệu view mới toanh theo thời gian thực (Realtime Live AI)."""
+        import random
+        g_key = gemini_key or os.getenv("GEMINI_API_KEY") or settings.GEMINI_API_KEY
+        o_key = openai_key or os.getenv("OPENAI_API_KEY") or settings.OPENAI_API_KEY
+
+        categories = [
+            "Bí ẩn vũ trụ & Hố đen không gian",
+            "Đại dương sâu thẳm & Sinh vật kỳ lạ",
+            "Đột phá công nghệ AI & Siêu máy tính lượng tử",
+            "Bí mật khảo cổ & Nền văn minh cổ đại biến mất",
+            "Thảm họa thiên nhiên giả định kinh hoàng",
+            "Nghịch lý thời gian & Vật lý lượng tử",
+            "Tâm lý học hành vi & Ảo giác não bộ"
+        ]
+        chosen_category = category if category and category != "all" else random.choice(categories)
+
+        prompt = f"""Bạn là Giám đốc Sáng tạo Nội dung triệu view hàng đầu trên TikTok / Shorts / Reels.
+Nhiệm vụ: Sáng tạo DUY NHẤT 1 chủ đề video ngắn tiếng Việt cực kỳ giật gân, cuốn hút, mới lạ chưa từng ai làm, có khả năng kích hoạt thuật toán viral triệu view ngay trong 3 giây đầu tiên (High Retention & High Engagement).
+Lĩnh vực ưu tiên: {chosen_category}.
+
+Yêu cầu:
+- Tiêu đề (title): Dưới 15 từ, đặt vấn đề gây tò mò tột độ hoặc một sự thật không thể tin nổi.
+- Hook (3 giây đầu): Câu mở màn gây chấn động khiến người xem không thể lướt qua.
+
+Trả về DUY NHẤT một đối tượng JSON:
+{{
+  "title": "Tiêu đề video cực cuốn...",
+  "hook": "Câu mở đầu 3s đầu tiên gây sốc...",
+  "category_name": "{chosen_category}",
+  "badge": "🔥 AI Trend Live",
+  "style": "Cinematic Documentary",
+  "voice": "namminh",
+  "image_model": "real_media"
+}}"""
+
+        # 1. Thử sinh qua Gemini 3.8 Flash / 2.5 Flash
+        if g_key:
+            try:
+                client = genai.Client(api_key=g_key)
+                for m in ["gemini-3.8-flash", "gemini-2.5-flash"]:
+                    try:
+                        res = client.models.generate_content(
+                            model=m,
+                            contents=prompt,
+                            config=types.GenerateContentConfig(
+                                temperature=0.95,
+                                response_mime_type="application/json"
+                            )
+                        )
+                        if res and res.text:
+                            data = json.loads(res.text)
+                            if isinstance(data, list) and len(data) > 0:
+                                data = data[0]
+                            if isinstance(data, dict) and "title" in data:
+                                data["id"] = f"live_{random.randint(1000, 9999)}"
+                                data["badge"] = "🔥 AI Live Trend"
+                                return data
+                    except Exception:
+                        continue
+            except Exception as e:
+                logger.warning(f"Lỗi sinh Live Trend bằng Gemini: {e}")
+
+        # 2. Thử sinh qua OpenAI GPT
+        if o_key:
+            try:
+                from openai import OpenAI
+                o_client = OpenAI(api_key=o_key)
+                res = o_client.chat.completions.create(
+                    model="gpt-4o-mini",
+                    messages=[{"role": "user", "content": prompt}],
+                    response_format={"type": "json_object"}
+                )
+                data = json.loads(res.choices[0].message.content)
+                if "title" in data:
+                    data["id"] = f"live_gpt_{random.randint(1000, 9999)}"
+                    data["badge"] = "👑 GPT Live Trend"
+                    return data
+            except Exception as e:
+                logger.warning(f"Lỗi sinh Live Trend bằng OpenAI: {e}")
+
+        # 3. Fallback an toàn: Chọn ngẫu nhiên từ kho dữ liệu
+        curated = TopicExplorerService.get_curated_topics()
+        selected = random.choice(curated)
+        selected["badge"] = "⚡ Trend Tuyển Chọn"
+        return selected

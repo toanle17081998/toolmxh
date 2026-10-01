@@ -177,6 +177,12 @@ async def get_topic_suggestions(
         )
     return {"topics": topics, "category": category, "count": len(topics)}
 
+@app.get("/api/topics/random-live")
+async def get_random_live_topic(category: Optional[str] = "all"):
+    """Tạo trực tiếp 1 chủ đề viral mới toanh qua Live AI realtime."""
+    topic = await TopicExplorerService.generate_single_live_trend(category=category)
+    return {"topic": topic}
+
 @app.get("/api/settings")
 async def get_system_settings():
     gemini_key = os.getenv("GEMINI_API_KEY") or settings.GEMINI_API_KEY

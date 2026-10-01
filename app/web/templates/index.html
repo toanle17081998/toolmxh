@@ -107,8 +107,9 @@
             <button onclick="quickSelectCategory('psychology')" type="button" class="text-[11px] bg-slate-800/90 hover:bg-indigo-950 hover:text-indigo-300 hover:border-indigo-500/40 text-slate-300 px-2 py-0.5 rounded-md border border-slate-700 transition flex items-center space-x-1">
               <span>🧠 Tâm Lý</span>
             </button>
-            <button onclick="randomizeTopic()" type="button" class="text-[11px] bg-indigo-500/20 hover:bg-indigo-500/30 text-indigo-300 px-2 py-0.5 rounded-md border border-indigo-500/30 transition flex items-center space-x-1 font-medium">
-              <span>🎲 Ngẫu nhiên</span>
+            <button id="randomTopicBtn" onclick="randomizeTopic()" type="button" class="text-[11px] bg-gradient-to-r from-indigo-500/20 to-purple-500/20 hover:from-indigo-500/30 hover:to-purple-500/30 text-indigo-300 hover:text-indigo-200 px-2.5 py-0.5 rounded-md border border-indigo-500/40 transition flex items-center space-x-1 font-semibold active:scale-95 shadow-sm">
+              <span id="randomBtnIcon">🎲</span>
+              <span id="randomBtnText">AI Săn Trend</span>
             </button>
           </div>
         </div>
@@ -641,18 +642,30 @@
     }
 
     async function randomizeTopic() {
+      const btn = document.getElementById('randomTopicBtn');
+      const icon = document.getElementById('randomBtnIcon');
+      const text = document.getElementById('randomBtnText');
+      if (btn) btn.disabled = true;
+      if (icon) icon.innerHTML = '<span class="inline-block animate-spin">⏳</span>';
+      if (text) text.innerText = 'Đang săn trend...';
+
       try {
-        if (!cachedCuratedTopics || cachedCuratedTopics.length === 0) {
-          const res = await fetch('/api/topics/suggest?category=all');
-          const data = await res.json();
-          cachedCuratedTopics = data.topics || [];
-        }
-        if (cachedCuratedTopics.length > 0) {
-          const randomIdx = Math.floor(Math.random() * cachedCuratedTopics.length);
-          applyTopic(cachedCuratedTopics[randomIdx]);
+        const res = await fetch('/api/topics/random-live?category=all');
+        const data = await res.json();
+        if (data.topic) {
+          applyTopic(data.topic);
+          const input = document.getElementById('topicInput');
+          if (input) {
+            input.classList.add('ring-2', 'ring-purple-500', 'bg-purple-950/30');
+            setTimeout(() => input.classList.remove('ring-2', 'ring-purple-500', 'bg-purple-950/30'), 1500);
+          }
         }
       } catch (e) {
-        console.error(e);
+        console.error('Lỗi lấy AI Live Trend:', e);
+      } finally {
+        if (btn) btn.disabled = false;
+        if (icon) icon.innerText = '🎲';
+        if (text) text.innerText = 'AI Săn Trend';
       }
     }
 
