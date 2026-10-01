@@ -54,19 +54,30 @@ Trả về JSON gồm 3 facts kỳ thú, core_angle và emotional_hook."""
         language: str = "vi"
     ) -> StructuredScript:
         num_scenes = max(5, min(12, int(target_duration / 6)))
-        prompt = f"""Bạn là đạo diễn và biên kịch video viral hàng đầu trên {platform}.
-Nhiệm vụ: Viết kịch bản video tiếng Việt hoàn chỉnh cho chủ đề: "{topic}".
-Tổng thời lượng: {target_duration}s, phân rã thành {num_scenes} cảnh.
+        prompt = f"""Bạn là Bậc Thầy Kể Chuyện và Đạo Diễn Biên Kịch hàng đầu cho các kênh triệu view trên {platform} (phong cách cuốn hút như Netflix Documentary, Kurzgesagt, Monster Box).
+Nhiệm vụ: Viết kịch bản video tiếng Việt ĐỈNH CAO, CỰC KỲ CUỐN HÚT cho chủ đề: "{topic}".
+Tổng thời lượng mục tiêu: {target_duration} giây.
+Số cảnh phân rã: {num_scenes} cảnh (mỗi cảnh từ 4 đến 7 giây).
 
-Yêu cầu cấu trúc BẮT BUỘC:
-1. CẢNH 1 (INTRO MỞ ĐẦU): Hook giật gân, câu hỏi kích thích tò mò cao độ trong 3-5s đầu, visual tráng lệ.
-2. THÂN BÀI: Trình bày kịch tính, lôi cuốn, ngắt câu rõ ràng, không sáo rỗng.
-3. CẢNH CUỐI (OUTRO & KÊU GỌI HÀNH ĐỘNG): Đúc kết thông điệp + câu kêu gọi hành động (Call To Action - CTA): Bấm Like và Theo dõi kênh để xem các tập tiếp theo.
+TIÊU CHUẨN BIÊN KỊCH TRIỆU VIEW (BẮT BUỘC TUÂN THỦ):
+1. CẢNH 1 - HOOK GIẬT TÍT ĐỈNH CAO (3-5 GIÂY ĐẦU):
+   - Tuyệt đối KHÔNG dùng văn mẫu sáo rỗng như: "Bạn có bao giờ tự hỏi...", "Chào mừng các bạn...", "Hôm nay chúng ta sẽ tìm hiểu...".
+   - Hãy mở đầu bằng MỘT TUYÊN BỐ GÂY SỐC, MỘT NGHỊCH LÝ ĐIÊN RỒ, hoặc MỘT HẬU QUẢ TẬN THẾ trực diện đánh thẳng vào người xem.
+   - Khiến người xem dừng ngón tay lại ngay giây đầu tiên vì quá tò mò.
+
+2. CÁC CẢNH THÂN BÀI - NGHỆ THUẬT DỒN DẬP & VÒNG LẶP TÒ MÒ (CURIOSITY LOOP):
+   - Ngôn từ giàu hình ảnh, nhịp điệu nhanh, sắc bén, dứt khoát.
+   - Mỗi cảnh hé lộ một sự thật không ngờ, đẩy kịch tính lên cao trào (Climax).
+   - Lời thuyết minh (narration) viết bằng tiếng Việt tự nhiên, có hồn, ngắt nghỉ câu chuẩn xác để AI đọc truyền cảm.
+
+3. CẢNH CUỐI CÙNG - NÚT THẮT SÂU SẮC & CALL TO ACTION KÍCH HOẠT THUẬT TOÁN:
+   - Đưa ra một câu hỏi mở gây tranh cãi kích thích người xem phải bình luận ngay.
+   - Lời kêu gọi hành động (CTA) khéo léo, tự nhiên: "Bấm Like và Theo dõi kênh để không bỏ lỡ những bí ẩn chấn động tiếp theo!"
 
 Trả về JSON theo schema StructuredScript:
 {{
-  "title": "Tiêu đề video",
-  "hook": "Câu mở đầu 3s đầu",
+  "title": "Tiêu đề video giật gân, chuẩn SEO triệu view",
+  "hook": "Câu Hook gây sốc trong 3 giây đầu",
   "target_duration": {target_duration},
   "language": "{language}",
   "scenes": [
@@ -75,18 +86,18 @@ Trả về JSON theo schema StructuredScript:
       "narration": "Lời thuyết minh INTRO mở đầu tiếng Việt...",
       "visual": "Mô tả bối cảnh hình ảnh INTRO...",
       "estimated_duration": 5.0,
-      "camera_motion": "slow zoom in",
+      "camera_motion": "dramatic fast zoom in / whip pan",
       "transition": "fade in",
-      "sound_effect": "whoosh"
+      "sound_effect": "heavy cinematic bass drop impact"
     }},
     {{
       "id": {num_scenes},
       "narration": "Lời thuyết minh OUTRO kết thúc và kêu gọi theo dõi kênh...",
       "visual": "Mô tả bối cảnh hình ảnh OUTRO...",
       "estimated_duration": 5.0,
-      "camera_motion": "slow pull back",
+      "camera_motion": "slow pull back to epic wide shot",
       "transition": "fade to black",
-      "sound_effect": "outro impact"
+      "sound_effect": "suspenseful outro crescendo"
     }}
   ]
 }}"""
