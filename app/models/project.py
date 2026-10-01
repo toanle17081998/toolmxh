@@ -45,9 +45,9 @@ class ProjectConfig(BaseModel):
     language: str = "vi"
     style: str = "Cinematic Documentary"
     llm_model: str = "gemini-3.8-flash"
-    image_model: str = "gemini-3-pro-image-preview"
+    image_model: str = "real_media"
     video_model: str = "cinematic"  # cinematic, veo-3.1-generate-preview, comfyui
-    voice: str = "onyx"
+    voice: str = "charon"
     created_at: datetime = Field(default_factory=datetime.now)
 
 class ProjectState(BaseModel):
