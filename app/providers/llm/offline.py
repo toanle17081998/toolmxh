@@ -29,12 +29,12 @@ class OfflineBrainProvider(LLMProvider):
         scenes = [
             SceneScript(
                 id=1,
-                narration=f"Bạn có bao giờ tưởng tượng: Ngay lúc này, nếu {topic}, Trái Đất sẽ ra sao?",
-                visual=f"Bầu trời đêm tối đen huyền bí, mặt trăng lung linh bỗng nhiên tan biến thành làn khói ánh sáng",
+                narration=f"Chào mừng bạn đến với kênh khám phá bí ẩn! Bạn có bao giờ tự hỏi: Nếu một ngày {topic}, thế giới của chúng ta sẽ ra sao?",
+                visual=f"Cảnh mở màn ấn tượng, bầu trời đêm tối đen huyền bí, mặt trăng lung linh bỗng nhiên tan biến thành làn khói ánh sáng",
                 estimated_duration=5.0,
                 camera_motion="dramatic slow zoom in",
-                transition="cut",
-                sound_effect="cosmic whoosh"
+                transition="fade in",
+                sound_effect="cosmic whoosh impact"
             ),
             SceneScript(
                 id=2,
@@ -92,12 +92,12 @@ class OfflineBrainProvider(LLMProvider):
             ),
             SceneScript(
                 id=8,
-                narration="Liệu loài người có thể sinh tồn trong một thế giới không có ánh trăng? Hãy để lại ý kiến của bạn bên dưới!",
-                visual="Một nhà thám hiểm đứng trên vách đá nhìn về phía chân trời vô tận đầy sao lấp lánh",
-                estimated_duration=6.0,
+                narration="Liệu bạn có muốn khám phá thêm nhiều điều kỳ thú khác? Hãy nhấn like và theo dõi kênh để không bỏ lỡ những bí ẩn tiếp theo nhé!",
+                visual="Khung cảnh outro điện ảnh, một nhà thám hiểm đứng trên vách đá nhìn về phía chân trời vô tận đầy sao lấp lánh, hiệu ứng mờ dần",
+                estimated_duration=5.5,
                 camera_motion="slow crane pull back to stars",
                 transition="fade to black",
-                sound_effect="cinematic crescendo impact"
+                sound_effect="cinematic outro crescendo"
             )
         ]
 

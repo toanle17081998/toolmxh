@@ -54,23 +54,39 @@ Trả về JSON gồm 3 facts kỳ thú, core_angle và emotional_hook."""
         language: str = "vi"
     ) -> StructuredScript:
         num_scenes = max(5, min(12, int(target_duration / 6)))
-        prompt = f"""Viết kịch bản video tiếng Việt hoàn chỉnh cho chủ đề: "{topic}".
-Tổng thời lượng: {target_duration}s, phân rã thành {num_scenes} scenes.
+        prompt = f"""Bạn là đạo diễn và biên kịch video viral hàng đầu trên {platform}.
+Nhiệm vụ: Viết kịch bản video tiếng Việt hoàn chỉnh cho chủ đề: "{topic}".
+Tổng thời lượng: {target_duration}s, phân rã thành {num_scenes} cảnh.
+
+Yêu cầu cấu trúc BẮT BUỘC:
+1. CẢNH 1 (INTRO MỞ ĐẦU): Hook giật gân, câu hỏi kích thích tò mò cao độ trong 3-5s đầu, visual tráng lệ.
+2. THÂN BÀI: Trình bày kịch tính, lôi cuốn, ngắt câu rõ ràng, không sáo rỗng.
+3. CẢNH CUỐI (OUTRO & KÊU GỌI HÀNH ĐỘNG): Đúc kết thông điệp + câu kêu gọi hành động (Call To Action - CTA): Bấm Like và Theo dõi kênh để xem các tập tiếp theo.
+
 Trả về JSON theo schema StructuredScript:
 {{
-  "title": "...",
-  "hook": "...",
+  "title": "Tiêu đề video",
+  "hook": "Câu mở đầu 3s đầu",
   "target_duration": {target_duration},
   "language": "{language}",
   "scenes": [
     {{
       "id": 1,
-      "narration": "...",
-      "visual": "...",
+      "narration": "Lời thuyết minh INTRO mở đầu tiếng Việt...",
+      "visual": "Mô tả bối cảnh hình ảnh INTRO...",
       "estimated_duration": 5.0,
-      "camera_motion": "...",
-      "transition": "cut",
-      "sound_effect": "..."
+      "camera_motion": "slow zoom in",
+      "transition": "fade in",
+      "sound_effect": "whoosh"
+    }},
+    {{
+      "id": {num_scenes},
+      "narration": "Lời thuyết minh OUTRO kết thúc và kêu gọi theo dõi kênh...",
+      "visual": "Mô tả bối cảnh hình ảnh OUTRO...",
+      "estimated_duration": 5.0,
+      "camera_motion": "slow pull back",
+      "transition": "fade to black",
+      "sound_effect": "outro impact"
     }}
   ]
 }}"""

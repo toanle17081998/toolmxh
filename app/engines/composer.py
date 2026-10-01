@@ -15,7 +15,8 @@ class VideoComposer:
         output_mp4_path: str,
         width: int = 1080,
         height: int = 1920,
-        burn_subtitles: bool = True
+        burn_subtitles: bool = True,
+        total_duration: float = 0.0
     ) -> str:
         out_p = Path(output_mp4_path)
         out_p.parent.mkdir(parents=True, exist_ok=True)
@@ -34,6 +35,13 @@ class VideoComposer:
         sub_filter_path = sub_p.replace(":", "\\:")
 
         vf_filters = [f"scale={width}:{height}:force_original_aspect_ratio=decrease,pad={width}:{height}:(ow-iw)/2:(oh-ih)/2"]
+        
+        # Thêm hiệu ứng Intro Fade-in mở màn điện ảnh và Outro Fade-out kết thúc êm ái
+        if total_duration > 3.0:
+            fade_out_st = max(0.0, total_duration - 1.2)
+            vf_filters.append("fade=t=in:st=0:d=0.8")
+            vf_filters.append(f"fade=t=out:st={fade_out_st:.2f}:d=1.2")
+
         if burn_subtitles and Path(subtitle_ass_path).exists():
             vf_filters.append(f"ass='{sub_filter_path}'")
 

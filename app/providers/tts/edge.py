@@ -1,18 +1,23 @@
+import os
 import asyncio
 import subprocess
 from pathlib import Path
+from typing import Optional
 import edge_tts
 from app.providers.tts.base import TTSProvider
 from app.config import get_ffmpeg_binary
 
 class EdgeTTSProvider(TTSProvider):
-    """Vietnamese Neural TTS sử dụng Microsoft Edge (vi-VN-HoaiMyNeural / vi-VN-NamMinhNeural)."""
+    """Vietnamese Neural TTS sử dụng Microsoft Edge (vi-VN-NamMinhNeural / vi-VN-HoaiMyNeural)."""
+
+    def __init__(self, proxy: Optional[str] = None):
+        self.proxy = proxy or os.getenv("HTTP_PROXY") or os.getenv("http_proxy") or "http://172.16.120.13:3128"
 
     async def synthesize_to_file(
         self,
         text: str,
         output_wav_path: str,
-        voice: str = "vi-VN-HoaiMyNeural",
+        voice: str = "vi-VN-NamMinhNeural",
         speed: float = 1.0
     ) -> float:
         out_path = Path(output_wav_path)
@@ -20,9 +25,23 @@ class EdgeTTSProvider(TTSProvider):
         temp_mp3 = out_path.with_suffix(".temp_edge.mp3")
 
         rate_str = f"+{int((speed - 1.0) * 100)}%" if speed >= 1.0 else f"-{int((1.0 - speed) * 100)}%"
-        communicate = edge_tts.Communicate(text=text, voice=voice, rate=rate_str)
-        # Timeout 4s để tự động fallback nhanh nếu mạng chặn WSS
-        await asyncio.wait_for(communicate.save(str(temp_mp3)), timeout=4.0)
+        
+        # Thử synthesize qua proxy nội bộ trước, nếu lỗi thì thử trực tiếp
+        saved = False
+        last_error = None
+        for p in [self.proxy, None]:
+            try:
+                communicate = edge_tts.Communicate(text=text, voice=voice, rate=rate_str, proxy=p)
+                await asyncio.wait_for(communicate.save(str(temp_mp3)), timeout=25.0)
+                if temp_mp3.exists() and temp_mp3.stat().st_size > 500:
+                    saved = True
+                    break
+            except Exception as e:
+                last_error = e
+                continue
+
+        if not saved or not temp_mp3.exists() or temp_mp3.stat().st_size == 0:
+            raise RuntimeError(f"Edge-TTS failed to synthesize: {last_error}")
 
         # Convert sang WAV 44.1kHz PCM
         ffmpeg_bin = get_ffmpeg_binary()

@@ -21,12 +21,13 @@ class AudioEngine:
         ffmpeg_bin = get_ffmpeg_binary()
 
         effective_bgm = bgm_path
-        # 1. Nếu không có BGM thực tế, giữ nguyên giọng đọc thuyết minh Studio trong trẻo (không chèn sóng sin rè)
+        # 1. Nếu không có BGM thực tế, giữ nguyên giọng đọc thuyết minh Studio trong trẻo (kèm fade in/out êm dịu)
         if not effective_bgm or not Path(effective_bgm).exists():
+            af_filter = f"highpass=f=60,afade=t=in:ss=0:d=0.4,afade=t=out:st={max(0.0, total_duration - 1.2):.2f}:d=1.2,loudnorm=I=-16:TP=-1.5:LRA=9"
             cmd = [
                 ffmpeg_bin, "-y",
                 "-i", str(narration_wav_path),
-                "-af", "highpass=f=60,loudnorm=I=-16:TP=-1.5:LRA=9",
+                "-af", af_filter,
                 "-c:a", "pcm_s16le",
                 "-ar", "44100",
                 str(out_p)

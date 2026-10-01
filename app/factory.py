@@ -131,6 +131,14 @@ class VietnameseVideoFactory:
             self.log(f"LLM gặp sự cố ({e}), tự động chuyển sang mô hình dự phòng...", style="bold yellow")
             self.llm = _get_fallback_llm(self.llm)
             script = await self.llm.generate_script(topic, duration, platform, language)
+
+        # Đảm bảo cảnh cuối luôn có đoạn Outro Call-To-Action (CTA) mời theo dõi kênh
+        if script.scenes:
+            last_scene = script.scenes[-1]
+            cta_keywords = ["theo dõi", "đăng ký", "follow", "subscribe", "bấm like", "thả tim"]
+            if not any(k in last_scene.narration.lower() for k in cta_keywords):
+                last_scene.narration += " Đừng quên bấm like và theo dõi kênh để đón xem những video thú vị tiếp theo nhé!"
+
         with open(p_dir / "script" / "script.json", "w", encoding="utf-8") as f:
             f.write(script.model_dump_json(indent=2))
         self.log(f"Kịch bản đã hoàn thành: '{script.title}' ({len(script.scenes)} scenes)", style="green")
@@ -160,7 +168,7 @@ class VietnameseVideoFactory:
         srt_path = p_dir / "subtitles" / "subtitle.srt"
         ass_path = p_dir / "subtitles" / "subtitle.ass"
         self.subtitle_engine.generate_srt(timeline, str(srt_path))
-        self.subtitle_engine.generate_ass(timeline, str(ass_path), platform=platform)
+        self.subtitle_engine.generate_ass(timeline, str(ass_path), platform=platform, title=script.title)
 
         # 6. VISUAL GENERATION (T2I -> I2V)
         state_mgr.update_stage(PipelineStage.VISUAL_GENERATION, 55.0)
@@ -257,7 +265,8 @@ class VietnameseVideoFactory:
             output_mp4_path=str(master_mp4),
             width=width,
             height=height,
-            burn_subtitles=True
+            burn_subtitles=True,
+            total_duration=timeline.total_duration
         )
         # Tạo bản sao output trực tiếp cho platform
         # Tạo các bản sao artifact hoàn thiện theo đúng chuẩn đặc tả

@@ -77,11 +77,19 @@ Nhiệm vụ: Viết kịch bản video tiếng Việt hoàn chỉnh cho chủ �
 Tổng thời lượng mục tiêu: {target_duration} giây.
 Số cảnh cần phân rã: {num_scenes} cảnh (mỗi cảnh khoảng 4 đến 7 giây).
 
-Yêu cầu nghiêm ngặt:
-1. Hook (3 giây đầu) phải cực kỳ giật gân, khơi gợi tò mò tột độ.
-2. Lời thuyết minh (narration) tiếng Việt phải tự nhiên, hào hùng hoặc huyền bí, ngắt câu rõ ràng, không dùng từ sáo rỗng.
-3. Visual mô tả cụ thể hình ảnh hành động, ánh sáng, góc máy cho từng cảnh.
-4. Tuân thủ định dạng JSON theo schema:
+Yêu cầu cấu trúc video BẮT BUỘC:
+1. CẢNH 1 (BẮT BUỘC LÀ INTRO MỞ MÀN):
+   - Hook giật gân, câu hỏi kích thích tò mò tột độ ngay trong 3 giây đầu tiên.
+   - Hình ảnh visual tráng lệ, gây ấn tượng thị giác mạnh mẽ ngay lập tức.
+2. CÁC CẢNH NỘI DUNG CHÍNH (THÂN BÀI):
+   - Trình bày diễn biến kịch tính, sự thật bất ngờ, thông tin sâu sắc.
+   - Lời thuyết minh (narration) tiếng Việt giàu cảm xúc, ngắt câu rõ ràng, tự nhiên.
+3. CẢNH CUỐI CÙNG (BẮT BUỘC LÀ OUTRO KẾT THÚC & CALL TO ACTION):
+   - Đúc kết thông điệp sâu sắc đọng lại trong tâm trí người xem.
+   - Lời kết phải có câu kêu gọi hành động (Call To Action - CTA) tự nhiên, cuốn hút: Kêu gọi người xem bấm Like, Share và Follow/Theo dõi kênh để đón xem những video kỳ thú tiếp theo.
+   - Visual cảnh cuối: Khung cảnh mở rộng hoành tráng, fade out êm ái.
+
+Tuân thủ định dạng JSON theo schema:
 {{
   "title": "Tiêu đề video hấp dẫn",
   "hook": "Câu mở đầu 3s đầu",
@@ -90,16 +98,24 @@ Yêu cầu nghiêm ngặt:
   "scenes": [
     {{
       "id": 1,
-      "narration": "Lời thuyết minh tiếng Việt của cảnh 1...",
-      "visual": "Mô tả bối cảnh hình ảnh...",
+      "narration": "Lời thuyết minh INTRO mở đầu tiếng Việt...",
+      "visual": "Mô tả bối cảnh hình ảnh INTRO...",
       "estimated_duration": 5.0,
       "camera_motion": "slow zoom in / dramatic pan / orbit",
-      "transition": "cut",
-      "sound_effect": "ocean rumble / heartbeat / whoosh"
+      "transition": "fade in",
+      "sound_effect": "cinematic impact / whoosh"
+    }},
+    {{
+      "id": {num_scenes},
+      "narration": "Lời thuyết minh OUTRO kết thúc và kêu gọi theo dõi kênh...",
+      "visual": "Mô tả bối cảnh hình ảnh OUTRO...",
+      "estimated_duration": 5.0,
+      "camera_motion": "slow pull back to wide",
+      "transition": "fade to black",
+      "sound_effect": "warm cinematic outro"
     }}
   ]
-}}
-"""
+}}"""
         response = self._call_generate_content(
             contents=prompt,
             config=types.GenerateContentConfig(

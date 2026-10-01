@@ -50,24 +50,24 @@ class MasterTTSProvider(TTSProvider):
                 openai_tts = OpenAITTSProvider(api_key=openai_key)
                 return await openai_tts.synthesize_to_file(text, output_wav_path, voice=v, speed=speed)
             except Exception as e:
-                logger.warning(f"OpenAI TTS gặp sự cố/hết credit ({e}), chuyển sang giải pháp dự phòng...")
+                logger.warning(f"OpenAI TTS gặp sự cố/hết credit ({e}), chuyển sang Edge-TTS Neural...")
 
-        # 2. Nếu người dùng chọn giọng Google Gemini Studio (charon, kore, puck, aoede, fenrir)
-        if (v in ["charon", "kore", "puck", "aoede", "fenrir"] or not openai_key) and gemini_key and not self.gemini_disabled:
+        # 2. Sử dụng Microsoft Edge-TTS Neural (NamMinh / HoaiMy) - Giọng chuẩn truyền hình, tự nhiên, 100% không giới hạn
+        edge_voice = "vi-VN-NamMinhNeural" if any(k in v for k in ["nam", "charon", "fenrir", "puck", "onyx", "echo"]) else "vi-VN-HoaiMyNeural"
+        try:
+            return await self.edge.synthesize_to_file(text, output_wav_path, edge_voice, speed)
+        except Exception as e:
+            logger.warning(f"Edge-TTS gặp sự cố mạng ({e}), chuyển sang fallback dự phòng...")
+
+        # 3. Nếu người dùng muốn thử Gemini Studio
+        if gemini_key and not self.gemini_disabled:
             if not self.gemini:
                 self.gemini = GeminiTTSProvider(api_key=gemini_key)
             try:
                 return await self.gemini.synthesize_to_file(text, output_wav_path, voice=v, speed=speed)
             except Exception as e:
                 self.gemini_disabled = True
-                logger.warning(f"Gemini TTS hết hạn mức 10 req/ngày hoặc lỗi ({e}), tự động chuyển toàn bộ sang fallback đồng bộ...")
-
-        # 3. Ánh xạ giọng Edge-TTS Neural chuẩn truyền hình
-        edge_voice = "vi-VN-NamMinhNeural" if "nam" in v or v in ["onyx", "charon", "fenrir"] else "vi-VN-HoaiMyNeural"
-        try:
-            return await self.edge.synthesize_to_file(text, output_wav_path, edge_voice, speed)
-        except Exception as e:
-            logger.warning(f"Edge-TTS gặp sự cố mạng ({e}), chuyển sang fallback cuối cùng...")
+                logger.warning(f"Gemini TTS hết hạn mức 10 req/ngày hoặc lỗi ({e}), chuyển sang fallback cuối cùng...")
 
         # 4. Fallback cuối cùng: Google TTS (gTTS ổn định cao, không giới hạn quota, chạy qua proxy)
         return await self.google.synthesize_to_file(text, output_wav_path, "vi", speed)

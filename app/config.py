@@ -31,8 +31,8 @@ class Settings(BaseSettings):
     # Default Providers
     DEFAULT_LLM_PROVIDER: str = "gemini"  # "gemini" | "openai"
     DEFAULT_LLM_MODEL: str = "gemini-3.8-flash"
-    DEFAULT_TTS_PROVIDER: str = "gemini"  # "gemini" | "google" | "edge"
-    DEFAULT_TTS_VOICE: str = "charon"     # "charon" | "kore" | "puck"
+    DEFAULT_TTS_PROVIDER: str = "edge"    # "edge" | "gemini" | "google"
+    DEFAULT_TTS_VOICE: str = "namminh"    # "namminh" | "hoaimy" | "charon"
     DEFAULT_IMAGE_PROVIDER: str = "auto"  # "auto" | "fal" | "comfyui" | "diffusers"
     DEFAULT_VIDEO_PROVIDER: str = "auto"  # "auto" | "wan" | "ltx" | "fal" | "comfyui"
 

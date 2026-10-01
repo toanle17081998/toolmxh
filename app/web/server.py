@@ -38,7 +38,7 @@ class GenerateRequest(BaseModel):
     llm_model: str = "gemini-3.8-flash"
     image_model: str = "real_media"
     video_model: str = "cinematic"
-    voice: str = "charon"
+    voice: str = "namminh"
     gemini_key: Optional[str] = None
     openai_key: Optional[str] = None
 
