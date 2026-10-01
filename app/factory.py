@@ -34,12 +34,28 @@ console = Console(force_terminal=True, legacy_windows=False)
 class VietnameseVideoFactory:
     """Orchestrator trung tâm sản xuất Video AI tiếng Việt 100% tự động."""
 
-    def __init__(self, console_output: bool = True):
+    def __init__(
+        self,
+        console_output: bool = True,
+        voice: str = "onyx",
+        gemini_key: Optional[str] = None,
+        openai_key: Optional[str] = None,
+        llm_model: Optional[str] = None,
+        video_model: str = "AUTO"
+    ):
         self.console_output = console_output
-        self.llm = get_llm_provider()
-        self.tts = get_tts_provider()
+        self.voice = voice
+
+        # Thiết lập key nếu được truyền vào
+        if gemini_key:
+            os.environ["GEMINI_API_KEY"] = gemini_key
+        if openai_key:
+            os.environ["OPENAI_API_KEY"] = openai_key
+
+        self.llm = get_llm_provider(model=llm_model)
+        self.tts = get_tts_provider(voice=voice)
         self.image_gen = get_image_provider()
-        self.video_gen = get_video_provider()
+        self.video_gen = get_video_provider(preference=video_model)
         self.timeline_engine = TimelineEngine(self.tts)
         self.subtitle_engine = SubtitleEngine()
         self.audio_engine = AudioEngine()

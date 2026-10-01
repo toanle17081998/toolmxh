@@ -48,6 +48,12 @@ def main():
     gen_parser.add_argument("--platform", type=str, default="tiktok", choices=["tiktok", "shorts", "reels", "youtube"])
     gen_parser.add_argument("--language", type=str, default="vi", help="Ngôn ngữ thuyết minh (mặc định vi)")
     gen_parser.add_argument("--project-id", type=str, default=None, help="Mã dự án (nếu muốn đặt trước)")
+    gen_parser.add_argument("--voice", type=str, default="onyx", help="Giọng đọc: onyx, nova, shimmer (OpenAI HD) hoặc namminh, hoaimy (VTV Neural)")
+    gen_parser.add_argument("--api-key", type=str, default=None, help="Khóa API Pro (Gemini hoặc OpenAI)")
+    gen_parser.add_argument("--gemini-key", type=str, default=None, help="Google Gemini Pro API Key")
+    gen_parser.add_argument("--openai-key", type=str, default=None, help="OpenAI Pro API Key")
+    gen_parser.add_argument("--llm-model", type=str, default=None, help="Mô hình LLM: gemini-2.5-pro, gpt-4o...")
+    gen_parser.add_argument("--video-model", type=str, default="AUTO", help="Mô hình Video: VEO, COMFYUI, AUTO")
 
     # Command: regenerate
     regen_parser = subparsers.add_parser("regenerate", help="Tái tạo một scene cụ thể")
@@ -68,7 +74,18 @@ def main():
     if args.command == "hardware":
         cmd_hardware()
     elif args.command == "generate":
-        factory = VietnameseVideoFactory(console_output=True)
+        # Xác định key
+        g_key = args.gemini_key or (args.api_key if args.api_key and not args.api_key.startswith("sk-") else None)
+        o_key = args.openai_key or (args.api_key if args.api_key and args.api_key.startswith("sk-") else None)
+
+        factory = VietnameseVideoFactory(
+            console_output=True,
+            voice=args.voice,
+            gemini_key=g_key,
+            openai_key=o_key,
+            llm_model=args.llm_model,
+            video_model=args.video_model
+        )
         result = asyncio.run(factory.generate_video(
             topic=args.topic,
             duration=args.duration,

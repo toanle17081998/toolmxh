@@ -134,12 +134,15 @@ class NeuralProceduralSynthesizer(ImageGenerationProvider):
                 fill=(*c_accent, p_alpha)
             )
 
-        # 5. Vignette điện ảnh bốn góc
-        base_img = base_img.filter(ImageFilter.GaussianBlur(radius=1.5))
-        
-        # Áp dụng bộ lọc tương phản và film grain bằng numpy
+        # 5. Tăng cường độ nét cao và tương phản sắc cạnh điện ảnh (Unsharp Mask)
+        from PIL import ImageEnhance
+        base_img = base_img.filter(ImageFilter.SHARPEN)
+        enhancer = ImageEnhance.Contrast(base_img)
+        base_img = enhancer.enhance(1.25)
+
+        # Áp dụng hạt phim tinh tế
         np_final = np.array(base_img, dtype=np.float32)
-        noise = np.random.normal(0, 5.0, np_final.shape)
+        noise = np.random.normal(0, 2.0, np_final.shape)
         np_final = np.clip(np_final + noise, 0, 255).astype(np.uint8)
 
         final_img = Image.fromarray(np_final)
