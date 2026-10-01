@@ -20,6 +20,7 @@ class AudioEngine:
         out_p.parent.mkdir(parents=True, exist_ok=True)
         ffmpeg_bin = get_ffmpeg_binary()
 
+        effective_bgm = bgm_path
         # 1. Nếu không có BGM thực tế, giữ nguyên giọng đọc thuyết minh Studio trong trẻo (không chèn sóng sin rè)
         if not effective_bgm or not Path(effective_bgm).exists():
             cmd = [
@@ -59,8 +60,6 @@ class AudioEngine:
             stderr=subprocess.DEVNULL
         )
         await proc.wait()
-        return str(out_p)
-
         return str(out_p)
 
     def _generate_ambient_drone(self, output_path: str, duration: float) -> None:
