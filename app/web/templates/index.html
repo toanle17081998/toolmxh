@@ -53,15 +53,37 @@
     <div class="lg:col-span-5 space-y-5">
       <div class="glass-panel rounded-2xl p-5 space-y-4">
         <div>
-          <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1.5">Chủ đề video (Topic)</label>
-          <textarea id="topicInput" rows="3" placeholder="Nhập chủ đề video của bạn..."
+          <div class="flex items-center justify-between mb-1.5">
+            <label class="block text-xs font-bold uppercase tracking-wider text-slate-400">Chủ đề video (Topic)</label>
+            <button onclick="openTopicExplorerModal()" type="button" class="inline-flex items-center space-x-1.5 px-2.5 py-1 rounded-lg text-xs font-bold text-amber-300 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 transition shadow-sm hover:scale-[1.02]">
+              <span class="animate-pulse">🔥</span>
+              <span>Khám Phá Hot Trend & Gợi Ý AI</span>
+            </button>
+          </div>
+          <textarea id="topicInput" rows="3" placeholder="Nhập chủ đề video của bạn hoặc bấm 'Khám Phá Hot Trend & Gợi Ý AI'..."
             class="w-full bg-slate-900/90 border border-slate-700/80 rounded-xl p-3 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition resize-none">10 bí ẩn dưới đáy đại dương chưa từng được giải mã</textarea>
           
-          <!-- Gợi ý chủ đề nhanh -->
-          <div class="flex flex-wrap gap-1.5 mt-2">
-            <button onclick="setTopic(this.innerText)" class="text-[11px] bg-slate-800 hover:bg-slate-700 text-slate-300 px-2 py-0.5 rounded-md border border-slate-700 transition">Nếu Mặt Trăng biến mất thì sao?</button>
-            <button onclick="setTopic(this.innerText)" class="text-[11px] bg-slate-800 hover:bg-slate-700 text-slate-300 px-2 py-0.5 rounded-md border border-slate-700 transition">Bí ẩn Hố Đen vũ trụ</button>
-            <button onclick="setTopic(this.innerText)" class="text-[11px] bg-slate-800 hover:bg-slate-700 text-slate-300 px-2 py-0.5 rounded-md border border-slate-700 transition">Sự thật rùng rợn về Tam giác quỷ</button>
+          <!-- Gợi ý chủ đề nhanh theo danh mục -->
+          <div class="flex flex-wrap items-center gap-1.5 mt-2">
+            <span class="text-[10px] text-slate-500 font-semibold uppercase tracking-wider mr-0.5">Hot Trend:</span>
+            <button onclick="quickSelectCategory('space')" type="button" class="text-[11px] bg-slate-800/90 hover:bg-indigo-950 hover:text-indigo-300 hover:border-indigo-500/40 text-slate-300 px-2 py-0.5 rounded-md border border-slate-700 transition flex items-center space-x-1">
+              <span>🌌 Vũ Trụ</span>
+            </button>
+            <button onclick="quickSelectCategory('ocean')" type="button" class="text-[11px] bg-slate-800/90 hover:bg-indigo-950 hover:text-indigo-300 hover:border-indigo-500/40 text-slate-300 px-2 py-0.5 rounded-md border border-slate-700 transition flex items-center space-x-1">
+              <span>🌊 Đại Dương</span>
+            </button>
+            <button onclick="quickSelectCategory('history')" type="button" class="text-[11px] bg-slate-800/90 hover:bg-indigo-950 hover:text-indigo-300 hover:border-indigo-500/40 text-slate-300 px-2 py-0.5 rounded-md border border-slate-700 transition flex items-center space-x-1">
+              <span>🏛️ Lịch Sử Bí Ẩn</span>
+            </button>
+            <button onclick="quickSelectCategory('tech')" type="button" class="text-[11px] bg-slate-800/90 hover:bg-indigo-950 hover:text-indigo-300 hover:border-indigo-500/40 text-slate-300 px-2 py-0.5 rounded-md border border-slate-700 transition flex items-center space-x-1">
+              <span>🤖 AI & Tương Lai</span>
+            </button>
+            <button onclick="quickSelectCategory('psychology')" type="button" class="text-[11px] bg-slate-800/90 hover:bg-indigo-950 hover:text-indigo-300 hover:border-indigo-500/40 text-slate-300 px-2 py-0.5 rounded-md border border-slate-700 transition flex items-center space-x-1">
+              <span>🧠 Tâm Lý</span>
+            </button>
+            <button onclick="randomizeTopic()" type="button" class="text-[11px] bg-indigo-500/20 hover:bg-indigo-500/30 text-indigo-300 px-2 py-0.5 rounded-md border border-indigo-500/30 transition flex items-center space-x-1 font-medium">
+              <span>🎲 Ngẫu nhiên</span>
+            </button>
           </div>
         </div>
 
@@ -295,6 +317,70 @@
     </div>
   </main>
 
+  <!-- Modal Khám Phá Chủ Đề Hot Trend & Gợi Ý AI -->
+  <div id="topicExplorerModal" class="fixed inset-0 bg-black/75 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+    <div class="glass-panel bg-[#0d1222] rounded-2xl max-w-3xl w-full p-6 space-y-4 border border-indigo-500/30 shadow-2xl flex flex-col max-h-[90vh]">
+      <!-- Header -->
+      <div class="flex items-center justify-between pb-3 border-b border-slate-800">
+        <div class="flex items-center space-x-2.5">
+          <span class="text-xl">🔥</span>
+          <div>
+            <h3 class="text-base font-bold text-white flex items-center space-x-2">
+              <span>Kho Chủ Đề Hot Trend & Gợi Ý AI</span>
+              <span class="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30 font-semibold uppercase tracking-wider">Viral Studio</span>
+            </h3>
+            <p class="text-xs text-slate-400">Tìm kiếm chủ đề thịnh hành hoặc để Trí tuệ Nhân tạo sáng tạo kịch bản triệu view</p>
+          </div>
+        </div>
+        <button onclick="closeTopicExplorerModal()" class="w-8 h-8 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center transition">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+        </button>
+      </div>
+
+      <!-- Thanh Tìm Kiếm & AI Brainstorm -->
+      <div class="flex flex-col sm:flex-row gap-2">
+        <div class="relative flex-1">
+          <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-500 text-sm">
+            🔍
+          </span>
+          <input type="text" id="topicSearchKeyword" placeholder="Nhập từ khóa (vd: vũ trụ, rãnh mariana, robot ai, tần thủy hoàng...)"
+            onkeydown="if(event.key === 'Enter') searchTopics();"
+            class="w-full bg-slate-900/90 border border-slate-700/80 rounded-xl pl-9 pr-3 py-2 text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition">
+        </div>
+        <div class="flex gap-2">
+          <button onclick="searchTopics()" type="button" class="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold text-xs transition border border-slate-700 flex items-center space-x-1.5">
+            <span>Tìm Kiếm</span>
+          </button>
+          <button id="aiSuggestBtn" onclick="generateAiTopics()" type="button" class="px-3.5 py-2 rounded-xl bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 hover:opacity-95 text-white font-bold text-xs transition shadow-lg shadow-indigo-600/30 flex items-center space-x-1.5 whitespace-nowrap">
+            <span id="aiBtnIcon">✨</span>
+            <span id="aiBtnText">AI Tạo Ý Tưởng Mới</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Danh Mục Filter Tabs -->
+      <div class="flex items-center gap-1.5 overflow-x-auto pb-1 text-xs no-scrollbar border-b border-slate-800/80">
+        <button onclick="filterCategory('all', this)" class="topic-cat-btn active-cat px-3 py-1 rounded-lg bg-indigo-600 text-white font-bold transition whitespace-nowrap">🔥 Tất Cả</button>
+        <button onclick="filterCategory('space', this)" class="topic-cat-btn px-3 py-1 rounded-lg bg-slate-900/80 text-slate-400 hover:text-slate-200 border border-slate-800 transition whitespace-nowrap">🌌 Vũ Trụ</button>
+        <button onclick="filterCategory('ocean', this)" class="topic-cat-btn px-3 py-1 rounded-lg bg-slate-900/80 text-slate-400 hover:text-slate-200 border border-slate-800 transition whitespace-nowrap">🌊 Đại Dương</button>
+        <button onclick="filterCategory('history', this)" class="topic-cat-btn px-3 py-1 rounded-lg bg-slate-900/80 text-slate-400 hover:text-slate-200 border border-slate-800 transition whitespace-nowrap">🏛️ Lịch Sử Bí Ẩn</button>
+        <button onclick="filterCategory('tech', this)" class="topic-cat-btn px-3 py-1 rounded-lg bg-slate-900/80 text-slate-400 hover:text-slate-200 border border-slate-800 transition whitespace-nowrap">🤖 Công Nghệ & AI</button>
+        <button onclick="filterCategory('psychology', this)" class="topic-cat-btn px-3 py-1 rounded-lg bg-slate-900/80 text-slate-400 hover:text-slate-200 border border-slate-800 transition whitespace-nowrap">🧠 Tâm Lý Học</button>
+      </div>
+
+      <!-- Danh Sách Chủ Đề Grid -->
+      <div id="topicsGrid" class="flex-1 overflow-y-auto space-y-3 pr-1 max-h-[55vh]">
+        <!-- Render động bằng JavaScript -->
+      </div>
+
+      <!-- Footer Info -->
+      <div class="pt-2 border-t border-slate-800/80 flex items-center justify-between text-[11px] text-slate-500">
+        <span>Nhấp <strong class="text-indigo-400">"Áp dụng chủ đề"</strong> để tự động điền kịch bản và tối ưu visual.</span>
+        <button onclick="closeTopicExplorerModal()" class="text-slate-400 hover:text-slate-200 underline">Đóng</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Modal Cài Đặt API Key Pro -->
   <div id="settingsModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
     <div class="glass-panel bg-[#0f1422] rounded-2xl max-w-md w-full p-6 space-y-4 border border-slate-700 shadow-2xl">
@@ -341,6 +427,192 @@
 
     function setTopic(text) {
       document.getElementById('topicInput').value = text;
+    }
+
+    let currentTopicCategory = 'all';
+    let cachedCuratedTopics = [];
+
+    function openTopicExplorerModal(initialCategory = 'all') {
+      document.getElementById('topicExplorerModal').classList.remove('hidden');
+      if (initialCategory) {
+        currentTopicCategory = initialCategory;
+        document.querySelectorAll('.topic-cat-btn').forEach(btn => {
+          if (btn.getAttribute('onclick') && btn.getAttribute('onclick').includes(`'${initialCategory}'`)) {
+            btn.className = 'topic-cat-btn active-cat px-3 py-1 rounded-lg bg-indigo-600 text-white font-bold transition whitespace-nowrap';
+          } else {
+            btn.className = 'topic-cat-btn px-3 py-1 rounded-lg bg-slate-900/80 text-slate-400 hover:text-slate-200 border border-slate-800 transition whitespace-nowrap';
+          }
+        });
+      }
+      loadTopics(currentTopicCategory, document.getElementById('topicSearchKeyword').value.trim());
+    }
+
+    function closeTopicExplorerModal() {
+      document.getElementById('topicExplorerModal').classList.add('hidden');
+    }
+
+    function filterCategory(category, btnElement) {
+      currentTopicCategory = category;
+      document.querySelectorAll('.topic-cat-btn').forEach(b => {
+        b.className = 'topic-cat-btn px-3 py-1 rounded-lg bg-slate-900/80 text-slate-400 hover:text-slate-200 border border-slate-800 transition whitespace-nowrap';
+      });
+      if (btnElement) {
+        btnElement.className = 'topic-cat-btn active-cat px-3 py-1 rounded-lg bg-indigo-600 text-white font-bold transition whitespace-nowrap';
+      }
+      loadTopics(category, document.getElementById('topicSearchKeyword').value.trim());
+    }
+
+    function searchTopics() {
+      const kw = document.getElementById('topicSearchKeyword').value.trim();
+      loadTopics(currentTopicCategory, kw);
+    }
+
+    async function generateAiTopics() {
+      const kw = document.getElementById('topicSearchKeyword').value.trim();
+      const btn = document.getElementById('aiSuggestBtn');
+      const icon = document.getElementById('aiBtnIcon');
+      const text = document.getElementById('aiBtnText');
+
+      btn.disabled = true;
+      icon.innerHTML = '<span class="inline-block animate-spin">⏳</span>';
+      text.innerText = 'AI Đang Brainstorm...';
+
+      try {
+        await loadTopics(currentTopicCategory, kw, true);
+      } finally {
+        btn.disabled = false;
+        icon.innerText = '✨';
+        text.innerText = 'AI Tạo Ý Tưởng Mới';
+      }
+    }
+
+    async function loadTopics(category = 'all', keyword = '', useAi = false) {
+      const grid = document.getElementById('topicsGrid');
+      grid.innerHTML = `
+        <div class="py-12 text-center text-slate-500 flex flex-col items-center justify-center space-y-2">
+          <div class="w-6 h-6 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
+          <span class="text-xs">${useAi ? 'AI đang phân tích xu hướng và sáng tạo hook triệu view...' : 'Đang tải danh sách chủ đề thịnh hành...'}</span>
+        </div>
+      `;
+
+      try {
+        const queryParams = new URLSearchParams({
+          category: category,
+          keyword: keyword,
+          use_ai: useAi ? 'true' : 'false'
+        });
+        const res = await fetch(`/api/topics/suggest?${queryParams.toString()}`);
+        const data = await res.json();
+        const topics = data.topics || [];
+        if (!keyword && category === 'all' && !useAi) {
+          cachedCuratedTopics = topics;
+        }
+        renderTopics(topics);
+      } catch (err) {
+        grid.innerHTML = `
+          <div class="py-10 text-center text-rose-400 text-xs">
+            Không thể tải chủ đề gợi ý. Vui lòng thử lại.
+          </div>
+        `;
+      }
+    }
+
+    function renderTopics(topics) {
+      const grid = document.getElementById('topicsGrid');
+      if (!topics || topics.length === 0) {
+        grid.innerHTML = `
+          <div class="py-12 text-center text-slate-500">
+            <p class="text-xs">Không tìm thấy chủ đề phù hợp với từ khóa.</p>
+            <button onclick="document.getElementById('topicSearchKeyword').value=''; loadTopics('all', '');" class="mt-2 text-xs text-indigo-400 underline">Xem tất cả chủ đề hot</button>
+          </div>
+        `;
+        return;
+      }
+
+      grid.innerHTML = `
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+          ${topics.map((t, idx) => `
+            <div class="p-3.5 rounded-xl bg-slate-900/90 hover:bg-slate-800/90 border border-slate-800 hover:border-indigo-500/50 transition flex flex-col justify-between space-y-3 group shadow-sm">
+              <div class="space-y-2">
+                <div class="flex items-center justify-between">
+                  <span class="text-[10px] px-2 py-0.5 rounded-md bg-indigo-500/10 text-indigo-300 border border-indigo-500/20 font-medium">
+                    ${t.category_name || t.category || 'Xu Hướng'}
+                  </span>
+                  <span class="text-[10px] px-2 py-0.5 rounded-md ${t.badge && t.badge.includes('AI') ? 'bg-purple-500/10 text-purple-300 border border-purple-500/20' : 'bg-amber-500/10 text-amber-300 border border-amber-500/20'} font-bold">
+                    ${t.badge || '🔥 Hot'}
+                  </span>
+                </div>
+                <h4 class="text-xs font-bold text-slate-100 group-hover:text-indigo-300 transition leading-snug">
+                  ${t.title}
+                </h4>
+                <div class="text-[11px] text-slate-300 italic bg-slate-950/70 p-2 rounded-lg border border-slate-800/80">
+                  🎯 <strong>Hook:</strong> "${t.hook}"
+                </div>
+              </div>
+              <div class="flex items-center justify-between pt-2 border-t border-slate-800/60">
+                <span class="text-[10px] text-slate-400 flex items-center space-x-1">
+                  <span>${t.image_model === 'anime_media' ? '🎨 Hoạt hình' : '📸 Ảnh thật 100%'}</span>
+                  <span>•</span>
+                  <span>🎙️ ${t.voice || 'Charon'}</span>
+                </span>
+                <button onclick="applyTopic(${JSON.stringify(t).replace(/"/g, '&quot;')})"
+                  type="button"
+                  class="px-3 py-1 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-[11px] transition shadow-md shadow-indigo-600/20 flex items-center space-x-1 active:scale-95">
+                  <span>⚡ Áp dụng</span>
+                </button>
+              </div>
+            </div>
+          `).join('')}
+        </div>
+      `;
+    }
+
+    function applyTopic(topicObj) {
+      if (typeof topicObj === 'string') {
+        try { topicObj = JSON.parse(topicObj); } catch(e) { topicObj = { title: topicObj }; }
+      }
+      document.getElementById('topicInput').value = topicObj.title;
+
+      if (topicObj.image_model) {
+        const imgSelect = document.getElementById('imageModelSelect');
+        if (imgSelect) imgSelect.value = topicObj.image_model;
+      }
+      if (topicObj.voice) {
+        const voiceSelect = document.getElementById('voiceSelect');
+        if (voiceSelect) voiceSelect.value = topicObj.voice;
+      }
+      if (topicObj.style) {
+        const styleSelect = document.getElementById('styleSelect');
+        if (styleSelect) styleSelect.value = topicObj.style;
+      }
+
+      closeTopicExplorerModal();
+
+      const input = document.getElementById('topicInput');
+      input.classList.add('ring-2', 'ring-indigo-500', 'bg-indigo-950/30');
+      setTimeout(() => {
+        input.classList.remove('ring-2', 'ring-indigo-500', 'bg-indigo-950/30');
+      }, 1500);
+    }
+
+    function quickSelectCategory(cat) {
+      openTopicExplorerModal(cat);
+    }
+
+    async function randomizeTopic() {
+      try {
+        if (!cachedCuratedTopics || cachedCuratedTopics.length === 0) {
+          const res = await fetch('/api/topics/suggest?category=all');
+          const data = await res.json();
+          cachedCuratedTopics = data.topics || [];
+        }
+        if (cachedCuratedTopics.length > 0) {
+          const randomIdx = Math.floor(Math.random() * cachedCuratedTopics.length);
+          applyTopic(cachedCuratedTopics[randomIdx]);
+        }
+      } catch (e) {
+        console.error(e);
+      }
     }
 
     async function loadProjects() {

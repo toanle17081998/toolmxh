@@ -12,6 +12,7 @@ from pydantic import BaseModel
 from app.config import settings
 from app.factory import VietnameseVideoFactory
 from app.core.state_manager import ProjectStateManager
+from app.core.topic_suggester import TopicExplorerService
 from app.models.project import ProjectConfig, PipelineStage, SceneStatus
 
 app = FastAPI(title="Vietnamese Generative Video Factory UI")
@@ -145,6 +146,24 @@ async def list_projects():
             except Exception:
                 continue
     return result
+
+@app.get("/api/topics/suggest")
+async def get_topic_suggestions(
+    keyword: Optional[str] = None,
+    category: Optional[str] = "all",
+    use_ai: bool = False
+):
+    if use_ai:
+        topics = await TopicExplorerService.generate_ai_suggestions(
+            keyword=keyword,
+            category=category
+        )
+    else:
+        topics = TopicExplorerService.get_curated_topics(
+            keyword=keyword,
+            category=category
+        )
+    return {"topics": topics, "category": category, "count": len(topics)}
 
 @app.get("/api/settings")
 async def get_system_settings():
