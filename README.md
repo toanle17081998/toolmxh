@@ -10,7 +10,8 @@
 - 🖥️ **Web GUI Studio Đẳng Cấp:** Giao diện trực quan hiện đại, theo dõi tiến trình render thời gian thực, quản lý và xem trước video trực tiếp trên trình duyệt.
 - 🎲 **AI Săn Trend Trực Tuyến (Realtime Live AI Discovery):** Tự động brainstorm các chủ đề thịnh hành, hấp dẫn, đạt triệu view bằng mô hình AI trực tiếp thay vì danh sách mẫu cố định.
 - 🎙️ **Studio Neural Voice Khóa Đồng Nhất:** Lồng tiếng truyền cảm bằng công nghệ Neural TTS (NamMinh Studio VTV, Hoài My, Charon, Onyx HD...), tự động khóa cứng 1 giọng thuyết minh duy nhất xuyên suốt toàn bộ video.
-- 🎨 **Visual Engine Đa Tầng Bám Sát Ngữ Cảnh:** Tự động phân tích từng phân cảnh kịch bản để kết hợp ảnh tư liệu thực tế (Wikimedia Commons, NASA archives) và ảnh nghệ thuật điện ảnh 8K Photorealistic (Pollinations AI).
+- 🎥 **OpenCut Real Dynamic Video Engine (Video Chuyển Động Thật 100%):** Tự động truy xuất và biên tập các clip video chuyển động thật (NASA, Wikimedia Video Archives, Pexels 4K Video) bám sát nội dung từng phân cảnh, nói KHÔNG với ảnh tĩnh phóng to (Ken Burns).
+- 🎨 **Visual Engine Đa Tầng Bám Sát Ngữ Cảnh:** Tự động kết hợp kho video tư liệu thực tế (Wikimedia Commons, NASA archives) và ảnh nghệ thuật điện ảnh 8K Photorealistic (Pollinations AI).
 - 🎬 **Tự Động Thêm Intro & Outro Chuẩn Truyền Thông:**
   - **Intro Hook 3s:** Mở màn thu hút sự chú ý kèm banner điện ảnh bắt mắt.
   - **Outro Bumper:** Phân cảnh kết thúc chuyên nghiệp kèm huy hiệu CTA kêu gọi người xem Follow/Đăng ký kênh.
